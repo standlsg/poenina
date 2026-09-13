@@ -342,17 +342,54 @@ function titleScreen(t) {
     const y = H - 48 - Math.sin(x * 0.021 + 1) * 10 - Math.sin(x * 0.05) * 4 + Math.sin(x * 0.14 + t * 2) * 1.6;
     x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
-  ctx.stroke();
-  // patates décoratives, sous le panneau pour ne pas parasiter le texte
-  for (let i = 0; i < 6; i++) {
-    const x = (i * 137 % (W - 60)) + 30, y = H * 0.76 + (i % 3) * 22 + Math.sin(i) * 10;
-    const r = 13 + (i % 3) * 6;
-    ctx.fillStyle = "rgba(201,246,218,0.75)";
-    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
-    ctx.fillStyle = "rgba(240,148,124,0.85)";
-    ctx.beginPath(); ctx.arc(x - 2, y - 2, r * 0.55, 0, TAU); ctx.fill();
-    ctx.strokeStyle = "rgba(14,43,58,0.6)"; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+  ctx.stroke();  // cabanes polynésiennes sur pilotis, rattachées à la plage par un ponton
+  const hutY = H - 38;
+  const huts = [
+    { x: W * 0.12, w: 34, h: 22 },
+    { x: W * 0.42, w: 40, h: 26 },
+    { x: W * 0.78, w: 30, h: 20 }
+  ];
+  for (const hu of huts) {
+    const hx = hu.x, hy = hutY, hw = hu.w, hh = hu.h;
+    // pilotis
+    ctx.strokeStyle = "#7d5c3b"; ctx.lineWidth = 3; ctx.lineCap = "round";
+    for (const dx of [-hw/2 + 3, hw/2 - 3]) {
+      ctx.beginPath(); ctx.moveTo(hx + dx, hy); ctx.lineTo(hx + dx, hy + hh); ctx.stroke();
+    }
+    // ponton qui rattach à la plage
+    ctx.strokeStyle = "#a07a52"; ctx.lineWidth = 5; ctx.lineCap = "butt";
+    ctx.beginPath(); ctx.moveTo(hx, hy + 4); ctx.lineTo(hx, H - 44); ctx.stroke();
+    ctx.strokeStyle = "rgba(14,43,58,0.5)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(hx - 2.5, hy + 4); ctx.lineTo(hx - 2.5, H - 44);
+    ctx.moveTo(hx + 2.5, hy + 4); ctx.lineTo(hx + 2.5, H - 44); ctx.stroke();
+    // plancher
+    ctx.fillStyle = "rgb(168,124,82)";
+    ctx.fillRect(hx - hw/2, hy - 3, hw, 6);
+    ctx.strokeStyle = "#0e2b3a"; ctx.lineWidth = 1.5; ctx.strokeRect(hx - hw/2, hy - 3, hw, 6);
+    // corps de la cabane
+    ctx.fillStyle = "rgb(196,150,102)";
+    ctx.fillRect(hx - hw/2 + 2, hy - hh, hw - 4, hh - 3);
+    ctx.strokeStyle = "#0e2b3a"; ctx.lineWidth = 1.5; ctx.strokeRect(hx - hw/2 + 2, hy - hh, hw - 4, hh - 3);
+    // toit en feuilles de pandanus (triangle) — plus large que la cabane
+    ctx.fillStyle = "rgb(140,100,66)";
+    ctx.beginPath();
+    ctx.moveTo(hx - hw/2 - 5, hy - hh + 2);
+    ctx.lineTo(hx + hw/2 + 5, hy - hh + 2);
+    ctx.lineTo(hx, hy - hh - 14); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = "#0e2b3a"; ctx.lineWidth = 1.5; ctx.stroke();
+    // lattes du toit
+    ctx.strokeStyle = "rgba(14,43,58,0.35)"; ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const u = i / 4;
+      ctx.beginPath();
+      ctx.moveTo(hx - (hw/2 + 5) * (1 - u) - hw/2 * u * 0, hy - hh + 2 - 14 * u);
+      ctx.lineTo(hx + (hw/2 + 5) * (1 - u) - hw/2 * u * 0, hy - hh + 2 - 14 * u);
+      ctx.stroke();
+    }
+    // ombre sous la cabane sur l'eau
+    ctx.fillStyle = "rgba(14,43,58,0.22)";
+    ctx.beginPath(); ctx.ellipse(hx + 6, hy + 3, hw * 0.6, 3, 0, 0, TAU); ctx.fill();
+    ctx.lineCap = "butt";
   }
   // cocotiers
   for (const px of [W * 0.1, W * 0.86, W * 0.2]) {
