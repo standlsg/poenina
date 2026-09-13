@@ -20,10 +20,10 @@ function levelSpec(n) {
        fardage (calée sur 12). windKn : ce qu'affiche l'anémomètre, moitié
        moins — les valeurs précédentes n'étaient pas crédibles en lagon.  */
     windPow: 9 + 1.6 * n,
-    /* Probabilité de panne PAR SECONDE de moteur en marche : jamais au
-       niveau 1, puis de l'ordre d'une panne sur la traversée au niveau 2
-       à deux au niveau 6. Un moteur capricieux, pas un moteur mort.     */
-    failRate: n < 2 ? 0 : 0.0022 + 0.0014 * (n - 2),
+    /* Probabilité de panne PAR SECONDE de moteur en marche, moteur froid.
+       Aucun niveau n'en est exempt — une panne peut toujours tomber — et
+       la température multiplie ce taux jusqu'à douze fois.              */
+    failRate: 0.0010 + 0.0007 * (n - 1),
     /* Le jour est calibré sur le temps qu'il faut vraiment pour traverser :
        une course propre arrive avec encore de la lumière, une course
        hésitante finit dans le noir. Le dernier niveau est nocturne.
@@ -273,8 +273,14 @@ function buildLevel(n, seedExtra) {
      lagon se durcit de niveau en niveau. Niveau 1 : du largue au vent
      arrière, on se laisse pousser. Niveau 6 : du travers au vent debout,
      il faut tirer des bords dans un chenal étroit.                       */
+  /* Le plancher ne descend pas au près serré « théorique » (44°) : à cette
+     allure le rendement de voile tombe à 0,26 et la dérive avale le gain
+     au vent, si bien qu'à la voile seule le dernier niveau était
+     infranchissable (mesuré 0 arrivée sur 6). À 55° la remontée reste
+     lente mais réelle — il faut tirer des bords, et le moteur sert à
+     racheter la marge dans les passages serrés.                        */
   const u = clamp((n - 1) / (CFG.MAXLEVEL - 1), 0, 1);
-  const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
+  const twaMin = lerp(82, 55, u), twaMax = lerp(178, 94, u);
   L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
   L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
   L.windPow = S.windPow;               // ce que subissent la voile et la coque
