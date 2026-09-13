@@ -114,11 +114,11 @@ function updateBoat(dt, t) {
      pilote à la fois le risque de panne et l'usure de l'huile.         */
   B.hot = Math.pow(clamp((B.temp - 0.55) / 0.45, 0, 1), 2);
   if (running) {
-    /* Le carter tient ~0,6 jour à plein régime : une traversée menée au
+    /* Le carter tient ~0,3 jour à plein régime : une traversée menée au
        taquet le vide presque, une traversée ménagée en garde le tiers. */
     // très dépendant du régime : ménager le gaz garde de l'huile, et couper
     // le moteur n'en consomme plus du tout
-    const wear = (0.15 + 0.85 * load) * (1 + 0.8 * B.hot);
+    const wear = 2 * (0.15 + 0.85 * load) * (1 + 0.8 * B.hot);
     const was = B.oil;
     B.oil = Math.max(0, B.oil - dt * wear / (L.dayLength * 0.62));
     if (was > 0.25 && B.oil <= 0.25) {
@@ -126,12 +126,12 @@ function updateBoat(dt, t) {
     }
   }
   /* Température d'équilibre : la charge chauffe, l'huile basse aggrave.
-     On monte lentement, on redescend plus vite au ralenti, et très vite
-     moteur coupé (τ ≈ 3,5 s) — couper, c'est la vraie solution.        */
+     On monte deux fois plus vite, on redescend quatre fois plus lentement
+     moteur coupé — il faut vraiment couper longtemps pour refroidir.    */
   /* Plein gaz avec de l'huile fraîche plafonne juste sous l'alarme (78 %) :
      c'est la chute d'huile qui fait passer dans le rouge.               */
   const tTarget = running ? (0.15 + 0.63 * load) * (1 + (1 - B.oil) * 0.45) : 0;
-  const tRate = !running ? 0.28 : (tTarget > B.temp ? 0.030 : 0.055);
+  const tRate = !running ? 0.07 : (tTarget > B.temp ? 0.060 : 0.055);
   B.temp = clamp(B.temp + (tTarget - B.temp) * Math.min(1, tRate * dt), 0, 1);
   B.tempWarn -= dt;
   if (B.temp > 0.88 && B.tempWarn <= 0) {
@@ -140,11 +140,11 @@ function updateBoat(dt, t) {
 
   if (running) {
     /* Risque de panne : le taux de base du niveau, plus un terme propre à
-       la surchauffe, le tout multiplié par dix à la limite. Les 25 s de
-       répit après un démarrage ne protègent plus si le moteur cuit.    */
+       la surchauffe, le tout multiplié par dix à la limite. Une panne peut
+       survenir n'importe quand après le démarrage, et sa probabilité
+       grimpe fortement avec la température.                           */
     const rate = (L.failRate + 0.0016 * B.hot) * (1 + 9 * B.hot);
-    const armed = B.engineOk > 25 || B.hot > 0.15;
-    if (B.sputter <= 0 && rate > 0 && armed && Math.random() < rate * dt) {
+    if (B.sputter <= 0 && rate > 0 && Math.random() < rate * dt) {
       B.sputter = 2.0; Snd.sSputter();
     }
     B.engineOk += dt;
