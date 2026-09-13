@@ -21,6 +21,7 @@ const Game = {
       const v = localStorage.getItem(SAVE_KEY) || localStorage.getItem("avanui.best") || "1";
       this.best = clamp(parseInt(v), 1, CFG.MAXLEVEL);
     } catch (e) { }
+    kbDetect();
     resize();
     initCaustics();
     buildLevel(1, 0);
@@ -169,6 +170,7 @@ function cheatKey(e) {
 }
 
 function onKey(e, down) {
+  kbLearn(e);                     // on apprend le vrai nom des touches
   const act = CODEMAP[e.code] || KEYMAP[(e.key || "").toLowerCase()];
   if (act) { Input[act] = down ? 1 : 0; e.preventDefault(); }
   if (!down) return;
