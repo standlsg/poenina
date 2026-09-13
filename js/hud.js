@@ -296,7 +296,8 @@ function drawHUD(t) {
   let msg = null, mc = UI.gold;
   if (B.inAnch && !B.anchored) {
     const spd = Math.hypot(B.vx, B.vy);
-    msg = spd > 0.9 ? "ZONE DE MOUILLAGE — RALENTIS (< 1.7 kt)" : "MAINTIENS  A  POUR MOUILLER";
+    msg = spd > 0.9 ? "ZONE DE MOUILLAGE — RALENTIS (< 1.7 kt)"
+      : "MAINTIENS  " + KB.anchor + "  POUR MOUILLER";
     mc = spd > 0.9 ? "rgb(255,175,140)" : UI.mint;
     if (B.anchoring > 0) {
       bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);
@@ -322,7 +323,151 @@ function skyGradient(a, b, c) {
   return g;
 }
 
+/* ---------------------- décor de l'écran d'accueil ----------------------
+   Tout est vu de dessus, comme le jeu : gros aplats, liseré bleu nuit,
+   ombre portée décalée en bas à droite (lumière en haut à gauche).       */
+
+/* ligne de rivage de l'accueil (une seule source de vérité) */
+const titleShore = x => H - 46 - Math.sin(x * 0.021 + 1) * 10 - Math.sin(x * 0.05) * 4;
+const pxw = v => Math.max(1, v);                  // un trait ne descend pas sous 1 px
+
+/* Faré sur pilotis vu du ciel : toit à quatre pans (arête faîtière au
+   milieu, croupes en diagonale), terrasse en planches autour, échelle côté
+   large. x,y = centre du toit ; s = échelle (1 ≈ 33 px de large).        */
+function titleFare(x, y, s, t) {
+  const w = 26 * s, h = 18 * s;                   // emprise du toit
+  const ox = 3.5 * s, oy = 4 * s;                 // débord de la terrasse
+  const ink = "rgba(14,43,58,0.85)";
+  const x0 = x - w / 2, x1 = x + w / 2, y0 = y - h / 2, y1 = y + h / 2;
+  const rx0 = x - w * 0.22, rx1 = x + w * 0.22;   // extrémités de l'arête
+
+  // ombre portée dans l'eau
+  ctx.fillStyle = "rgba(10,40,58,0.22)";
+  ctx.fillRect(x0 - ox + 3 * s, y0 - oy + 4 * s, w + ox * 2, h + oy * 2);
+
+  // échelle qui descend dans le lagon, côté large
+  ctx.strokeStyle = "#8a6742"; ctx.lineWidth = pxw(1.2 * s);
+  ctx.beginPath();
+  ctx.moveTo(x - 2.4 * s, y0 - oy); ctx.lineTo(x - 2.4 * s, y0 - oy - 6 * s);
+  ctx.moveTo(x + 2.4 * s, y0 - oy); ctx.lineTo(x + 2.4 * s, y0 - oy - 6 * s);
+  ctx.stroke();
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i <= 2; i++) {
+    const yy = y0 - oy - i * 2 * s;
+    ctx.moveTo(x - 2.4 * s, yy); ctx.lineTo(x + 2.4 * s, yy);
+  }
+  ctx.stroke();
+
+  // pilotis qui dépassent de la terrasse, dans l'ombre
+  ctx.fillStyle = "#6d4f33";
+  const pl = pxw(2 * s);
+  for (const cx of [x0 - ox, x1 + ox - pl]) for (const cy of [y0 - oy, y1 + oy - pl])
+    ctx.fillRect(cx + 1.5 * s, cy + 2 * s, pl, pl);
+
+  // terrasse : planches dans le sens de la largeur
+  ctx.fillStyle = "#dcb583";
+  ctx.fillRect(x0 - ox, y0 - oy, w + ox * 2, h + oy * 2);
+  ctx.strokeStyle = "rgba(125,92,59,0.38)"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let yy = y0 - oy + 3 * s; yy < y1 + oy; yy += 3 * s) {
+    const r = Math.round(yy) + 0.5;
+    ctx.moveTo(x0 - ox, r); ctx.lineTo(x1 + ox, r);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = ink; ctx.lineWidth = pxw(1.2 * s);
+  ctx.strokeRect(x0 - ox, y0 - oy, w + ox * 2, h + oy * 2);
+  // transat sur la terrasse, côté lagon
+  if (s > 0.75) {
+    ctx.fillStyle = "#f4eddc";
+    ctx.fillRect(x - 5 * s, y0 - oy + 1.2 * s, 4 * s, 2 * s);
+    ctx.fillStyle = "rgba(14,43,58,0.5)";
+    ctx.fillRect(x - 5 * s, y0 - oy + 1.2 * s, 4 * s, 1);
+  }
+
+  // toit de pandanus : pan au soleil en haut, pan à l'ombre en bas
+  const face = (pts, col) => {
+    ctx.fillStyle = col; ctx.beginPath();
+    ctx.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
+    ctx.closePath(); ctx.fill();
+  };
+  face([x0, y0, x1, y0, rx1, y, rx0, y], "#d7a869");   // au soleil
+  face([x0, y1, x1, y1, rx1, y, rx0, y], "#7f5c3c");   // à l'ombre
+  face([x0, y0, rx0, y, x0, y1], "#bc8d55");
+  face([x1, y0, rx1, y, x1, y1], "#9a7146");
+  // rangs de chaume, parallèles aux égouts
+  ctx.strokeStyle = "rgba(14,43,58,0.20)"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i <= 2; i++) {
+    const u = i / 3, yA = y0 + (y - y0) * u, yB = y1 + (y - y1) * u;
+    const hw = w / 2 - (w / 2 - w * 0.22) * u;
+    ctx.moveTo(x - hw, Math.round(yA) + 0.5); ctx.lineTo(x + hw, Math.round(yA) + 0.5);
+    ctx.moveTo(x - hw, Math.round(yB) + 0.5); ctx.lineTo(x + hw, Math.round(yB) + 0.5);
+  }
+  ctx.stroke();
+  // liseré : silhouette, arête et croupes
+  ctx.strokeStyle = ink; ctx.lineWidth = pxw(1.3 * s);
+  ctx.strokeRect(x0, y0, w, h);
+  ctx.lineWidth = pxw(1 * s);
+  ctx.beginPath();
+  ctx.moveTo(rx0, y); ctx.lineTo(rx1, y);
+  ctx.moveTo(x0, y0); ctx.lineTo(rx0, y); ctx.lineTo(x0, y1);
+  ctx.moveTo(x1, y0); ctx.lineTo(rx1, y); ctx.lineTo(x1, y1);
+  ctx.stroke();
+  // l'eau qui bat contre les pilotis : deux clapots qui ondulent
+  ctx.fillStyle = "rgba(255,255,255,0.3)";
+  for (let i = 0; i < 2; i++) {
+    const ph = t * 1.6 + i * 2.1, dw = (w + ox * 2) * 0.3;
+    ctx.fillRect(x + (i ? 1 : -1) * dw * 0.72 - dw / 2 + Math.sin(ph) * 1.6 * s,
+      y1 + oy + (1.6 + Math.cos(ph) * 0.5) * s, dw, pxw(1 * s));
+  }
+}
+
+/* Ponton de bois, de la plage vers le large. */
+function titleDock(x, yTop, yBot, s) {
+  const w = 6.5 * s;
+  ctx.fillStyle = "rgba(10,40,58,0.22)";
+  ctx.fillRect(x - w / 2 + 3 * s, yTop + 4 * s, w, yBot - yTop);
+  ctx.fillStyle = "#c9a06c";
+  ctx.fillRect(x - w / 2, yTop, w, yBot - yTop);
+  ctx.strokeStyle = "rgba(125,92,59,0.5)"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let yy = yTop + 2.6 * s; yy < yBot; yy += 2.6 * s) {
+    const r = Math.round(yy) + 0.5;
+    ctx.moveTo(x - w / 2, r); ctx.lineTo(x + w / 2, r);
+  }
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(14,43,58,0.85)"; ctx.lineWidth = pxw(1.2 * s);
+  ctx.beginPath();
+  ctx.moveTo(x - w / 2, yBot); ctx.lineTo(x - w / 2, yTop);
+  ctx.lineTo(x + w / 2, yTop); ctx.lineTo(x + w / 2, yBot);
+  ctx.stroke();
+  // pilotis qui dépassent de part et d'autre
+  ctx.fillStyle = "#7d5c3b";
+  const p = pxw(1.7 * s);
+  for (let yy = yTop + 5 * s; yy < yBot - 3 * s; yy += 11 * s) {
+    ctx.fillRect(x - w / 2 - p, yy, p, p);
+    ctx.fillRect(x + w / 2, yy, p, p);
+  }
+}
+
+/* Un ponton et ses farés. huts = [côté (-1 ou 1), position sur le ponton]. */
+function titleFareGroup(x, s, t, huts) {
+  const len = 56 * s, yb = titleShore(x) + 2 * s;
+  titleDock(x, yb - len, yb, s);
+  for (const hut of huts) titleFare(x + hut[0] * 18 * s, yb - len * hut[1], s, t + hut[1] * 2.4);
+}
+
 function titleScreen(t) {
+  /* Géométrie du panneau calculée d'abord : le décor de la plage s'y adapte
+     pour ne jamais passer derrière le texte.                             */
+  const cxx = W / 2;
+  const bwp = Math.min(320, W - 16);
+  const twoCol = bwp >= 300;                 // sinon on empile, sans chevauchement
+  const bhp = (twoCol ? 101 : 146) + (KB.known ? 0 : 12);
+  const bxp = cxx - bwp / 2, byp = H * 0.37;
+
   ctx.fillStyle = skyGradient("#0d4f7c", "#1f97c0", "#6fe0e0");
   ctx.fillRect(0, 0, W, H);
   // bandes d'eau + caustiques
@@ -334,65 +479,22 @@ function titleScreen(t) {
   // plage en bas
   ctx.fillStyle = "#f6e6ae";
   ctx.beginPath(); ctx.moveTo(0, H);
-  for (let x = 0; x <= W; x += 8) ctx.lineTo(x, H - 46 - Math.sin(x * 0.021 + 1) * 10 - Math.sin(x * 0.05) * 4);
+  for (let x = 0; x <= W; x += 8) ctx.lineTo(x, titleShore(x));
   ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
   ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
   ctx.beginPath();
   for (let x = 0; x <= W; x += 6) {
-    const y = H - 48 - Math.sin(x * 0.021 + 1) * 10 - Math.sin(x * 0.05) * 4 + Math.sin(x * 0.14 + t * 2) * 1.6;
+    const y = titleShore(x) - 2 + Math.sin(x * 0.14 + t * 2) * 1.6;
     x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
-  ctx.stroke();  
-   
-   // cabanes polynésiennes sur pilotis, rattachées à la plage par un ponton
-  const hutY = H - 38;
-  const huts = [
-    { x: W * 0.12, w: 34, h: 22 },
-    { x: W * 0.42, w: 40, h: 26 },
-    { x: W * 0.78, w: 30, h: 20 }
-  ];
-  for (const hu of huts) {
-    const hx = hu.x, hy = hutY, hw = hu.w, hh = hu.h;
-    // pilotis
-    ctx.strokeStyle = "#7d5c3b"; ctx.lineWidth = 3; ctx.lineCap = "round";
-    for (const dx of [-hw/2 + 3, hw/2 - 3]) {
-      ctx.beginPath(); ctx.moveTo(hx + dx, hy); ctx.lineTo(hx + dx, hy + hh); ctx.stroke();
-    }
-    // ponton qui rattach à la plage
-    ctx.strokeStyle = "#a07a52"; ctx.lineWidth = 5; ctx.lineCap = "butt";
-    ctx.beginPath(); ctx.moveTo(hx, hy + 4); ctx.lineTo(hx, H - 44); ctx.stroke();
-    ctx.strokeStyle = "rgba(14,43,58,0.5)"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(hx - 2.5, hy + 4); ctx.lineTo(hx - 2.5, H - 44);
-    ctx.moveTo(hx + 2.5, hy + 4); ctx.lineTo(hx + 2.5, H - 44); ctx.stroke();
-    // plancher
-    ctx.fillStyle = "rgb(168,124,82)";
-    ctx.fillRect(hx - hw/2, hy - 3, hw, 6);
-    ctx.strokeStyle = "#0e2b3a"; ctx.lineWidth = 1.5; ctx.strokeRect(hx - hw/2, hy - 3, hw, 6);
-    // corps de la cabane
-    ctx.fillStyle = "rgb(196,150,102)";
-    ctx.fillRect(hx - hw/2 + 2, hy - hh, hw - 4, hh - 3);
-    ctx.strokeStyle = "#0e2b3a"; ctx.lineWidth = 1.5; ctx.strokeRect(hx - hw/2 + 2, hy - hh, hw - 4, hh - 3);
-    // toit en feuilles de pandanus (triangle) — plus large que la cabane
-    ctx.fillStyle = "rgb(140,100,66)";
-    ctx.beginPath();
-    ctx.moveTo(hx - hw/2 - 5, hy - hh + 2);
-    ctx.lineTo(hx + hw/2 + 5, hy - hh + 2);
-    ctx.lineTo(hx, hy - hh - 14); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = "#0e2b3a"; ctx.lineWidth = 1.5; ctx.stroke();
-    // lattes du toit
-    ctx.strokeStyle = "rgba(14,43,58,0.35)"; ctx.lineWidth = 1;
-    for (let i = 1; i < 4; i++) {
-      const u = i / 4;
-      ctx.beginPath();
-      ctx.moveTo(hx - (hw/2 + 5) * (1 - u) - hw/2 * u * 0, hy - hh + 2 - 14 * u);
-      ctx.lineTo(hx + (hw/2 + 5) * (1 - u) - hw/2 * u * 0, hy - hh + 2 - 14 * u);
-      ctx.stroke();
-    }
-    // ombre sous la cabane sur l'eau
-    ctx.fillStyle = "rgba(14,43,58,0.22)";
-    ctx.beginPath(); ctx.ellipse(hx + 6, hy + 3, hw * 0.6, 3, 0, 0, TAU); ctx.fill();
-    ctx.lineCap = "butt";
-  }
+  ctx.stroke();
+  /* Farés sur pilotis, côté plage : le ponton part du sable et dessert les
+     cabanes. Au large c'est la route du catamaran, il leur passerait dessus.
+     L'échelle s'ajuste à l'eau libre restante sous le panneau.          */
+  const fRoom = Math.min(titleShore(W * 0.15), titleShore(W * 0.85)) - (byp + bhp + 10);
+  const fs = clamp(Math.min(fRoom / 62, W / 620), 0.5, 1);
+  titleFareGroup(W * 0.15, fs, t, [[-1, 0.44], [1, 0.82]]);
+  titleFareGroup(W * 0.85, fs * 0.9, t + 2.3, [[1, 0.62]]);
   // cocotiers
   for (const px of [W * 0.1, W * 0.86, W * 0.2]) {
     const py = H - 26 + (px > W / 2 ? 6 : 0);
@@ -435,23 +537,21 @@ function titleScreen(t) {
   ctx.beginPath(); ctx.moveTo(bx - 16, byy - 4); ctx.lineTo(bx - 52, byy - 5); ctx.stroke();
 
   // titre (taille bornée pour tenir sur les fenêtres étroites)
-  const cxx = W / 2, ty = H * 0.26;
+  const ty = H * 0.26;
   const ts = Math.min(44, (W - 40) / 5);
   txt("POE NINA", cxx + 3, ty + 3, ts, "rgba(9,42,60,0.45)", "center");
   txt("POE NINA", cxx, ty, ts, "#fff6d8", "center");
   txt("cap sur le mouillage", cxx, ty + 18, 11, "rgba(255,248,225,0.95)", "center");
 
-  const bwp = Math.min(320, W - 16);
-  const twoCol = bwp >= 300;                 // sinon on empile, sans chevauchement
-  const bhp = twoCol ? 101 : 146, bxp = cxx - bwp / 2, byp = H * 0.37;
   panel(bxp, byp, bwp, bhp, 0.72);
-  /* libellés courts : deux colonnes de ~27 caractères, sans chevauchement */
+  /* libellés courts : deux colonnes de ~27 caractères, sans chevauchement.
+     Les lettres viennent de KB, donc elles suivent le clavier du joueur. */
   const keys = [
-    ["Z / S", "gaz, marche arrière"],
-    ["Q / D", "la barre"],
+    [KB.up + " / " + KB.down, "gaz, marche arrière"],
+    [KB.left + " / " + KB.right, "la barre"],
     ["ESPACE", "la voile"],
     ["E", "couper le moteur"],
-    ["A", "mouiller l'ancre"],
+    [KB.anchor, "mouiller l'ancre"],
     ["P", "pause"]
   ];
   keys.forEach((r, i) => {
@@ -469,6 +569,11 @@ function titleScreen(t) {
     "Et arrive au mouillage avant la nuit."];
   const ds = Math.min(8, (bwp - 26) / (Math.max(...desc.map(s => s.length)) * 0.61));
   desc.forEach((s, i) => txt(s, cxx, ty2 + i * (ds + 4), ds, UI.dim, "center"));
+  /* Navigateur qui ne sait pas dire le clavier (Firefox, Safari) : on donne
+     l'équivalent QWERTY, jusqu'à ce que la première touche nous renseigne. */
+  if (!KB.known)
+    txt("clavier QWERTY : W A S D, ancre Q", cxx, ty2 + 3 * (ds + 4), ds,
+      "rgba(255,201,74,0.8)", "center");
 
   const bl = 0.55 + 0.45 * Math.sin(t * 3.4);
   const py = Math.max(H * 0.68, byp + bhp + 26);
