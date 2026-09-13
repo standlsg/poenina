@@ -424,7 +424,7 @@ function titleScreen(t) {
   });
   const ty2 = byp + (twoCol ? 67 : 112);
   txt("Trois chocs sur le corail et le cata coule.", cxx, ty2, 8, UI.dim, "center");
-  txt("L'huile baisse, le moteur chauffe : lève le pied ou coupe.", cxx, ty2 + 12, 8, UI.dim, "center");
+  txt("L'huile part vite : navigue à la voile, moteur pour les passages durs.", cxx, ty2 + 12, 8, UI.dim, "center");
   txt("Et arrive au mouillage avant la nuit.", cxx, ty2 + 24, 8, UI.dim, "center");
 
   const bl = 0.55 + 0.45 * Math.sin(t * 3.4);
@@ -460,7 +460,7 @@ function briefScreen(t) {
     ["vent", "de " + dirs[di] + ", " + Math.round(L.windKn) + " kt"],
     ["allure dans l'axe", Math.round(a) + "°"],
     ["lumière", L.night ? "AUCUNE — de nuit" : "jour : " + Math.round(L.dayLength) + " s"],
-    ["fiabilité moteur", L.failRate === 0 ? "neuve" : L.failRate < 0.004 ? "correcte" : L.failRate < 0.0065 ? "douteuse" : "inquiétante"]
+    ["fiabilité moteur", L.failRate < 0.0015 ? "correcte" : L.failRate < 0.0025 ? "douteuse" : "inquiétante"]
   ];
   rows.forEach((r, i) => {
     txt(r[0], bx + 24, by + 62 + i * 12, 8, UI.dim);
