@@ -423,14 +423,19 @@ function titleScreen(t) {
     txt(r[1], x + tw(r[0], 9) + 7, y, 8, UI.ink);
   });
   const ty2 = byp + (twoCol ? 67 : 112);
-  txt("Trois chocs sur le corail et le cata coule.", cxx, ty2, 8, UI.dim, "center");
-  txt("L'huile part vite : navigue à la voile, moteur pour les passages durs.", cxx, ty2 + 12, 8, UI.dim, "center");
-  txt("Et arrive au mouillage avant la nuit.", cxx, ty2 + 24, 8, UI.dim, "center");
+  /* taille ajustée à la largeur du panneau : ces lignes sont longues et
+     ne doivent jamais déborder, même sur une fenêtre étroite.          */
+  const desc = ["Trois chocs sur le corail et le cata coule.",
+    "L'huile part vite : la voile d'abord, le moteur en secours.",
+    "Et arrive au mouillage avant la nuit."];
+  const ds = Math.min(8, (bwp - 26) / (Math.max(...desc.map(s => s.length)) * 0.61));
+  desc.forEach((s, i) => txt(s, cxx, ty2 + i * (ds + 4), ds, UI.dim, "center"));
 
   const bl = 0.55 + 0.45 * Math.sin(t * 3.4);
   const py = Math.max(H * 0.68, byp + bhp + 26);
   txt("APPUIE SUR  ESPACE", cxx, py, 13, "rgba(255,250,220," + bl + ")", "center");
-  if (Game.best > 1) txt("progression : niveau " + Game.best, cxx, py + 15, 8, "rgba(255,255,255,0.7)", "center");
+  if (Game.best > 1)
+    txt("meilleur niveau atteint : " + Game.best, cxx, py + 15, 8, "rgba(255,255,255,0.7)", "center");
 }
 
 const LEVEL_NAMES = ["Le lagon d'Avatoru", "La passe de Tiputa", "Les patates de Rangiroa",
