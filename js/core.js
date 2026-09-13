@@ -146,6 +146,34 @@ function sunParams(s) {
   return SUNKEY[SUNKEY.length - 1];
 }
 
+/* ------------------------ étiquettes du clavier ------------------------
+   Le jeu lit les POSITIONS physiques des touches (e.code), donc le même
+   geste marche en AZERTY, en QWERTY ou en QWERTZ. Seuls les libellés
+   affichés changent : la touche « avant » est marquée Z sur un AZERTY et
+   W sur un QWERTY. On part de l'AZERTY, puis on corrige dès qu'on sait.  */
+const KB = { up: "Z", left: "Q", down: "S", right: "D", anchor: "A", known: false };
+const KB_CODE = { KeyW: "up", KeyA: "left", KeyS: "down", KeyD: "right", KeyQ: "anchor" };
+
+/* 1) Chromium sait donner la correspondance complète, sans rien presser. */
+function kbDetect() {
+  try {
+    if (!navigator.keyboard || !navigator.keyboard.getLayoutMap) return;
+    navigator.keyboard.getLayoutMap().then(map => {
+      for (const code in KB_CODE) {
+        const c = map.get(code);
+        if (c && c.length === 1) { KB[KB_CODE[code]] = c.toUpperCase(); KB.known = true; }
+      }
+    }).catch(() => { });
+  } catch (e) { }
+}
+/* 2) Ailleurs (Firefox, Safari), on apprend à la première frappe. */
+function kbLearn(e) {
+  const slot = KB_CODE[e.code];
+  if (!slot) return;
+  const c = (e.key || "");
+  if (c.length === 1 && /[a-zA-Z]/.test(c)) { KB[slot] = c.toUpperCase(); KB.known = true; }
+}
+
 /* --------------------------- canvas & caméra --------------------------- */
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d", { alpha: false });
