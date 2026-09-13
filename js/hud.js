@@ -342,7 +342,9 @@ function titleScreen(t) {
     const y = H - 48 - Math.sin(x * 0.021 + 1) * 10 - Math.sin(x * 0.05) * 4 + Math.sin(x * 0.14 + t * 2) * 1.6;
     x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
   }
-  ctx.stroke();  // cabanes polynésiennes sur pilotis, rattachées à la plage par un ponton
+  ctx.stroke();  
+   
+   // cabanes polynésiennes sur pilotis, rattachées à la plage par un ponton
   const hutY = H - 38;
   const huts = [
     { x: W * 0.12, w: 34, h: 22 },
