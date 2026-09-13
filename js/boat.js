@@ -110,28 +110,26 @@ function updateBoat(dt, t) {
   const load = running ? Math.abs(B.thr) : 0;
 
   /* -------------------- huile, température, surchauffe ------------------
-     hot vaut 0 sous 55 % de jauge puis monte au carré : c'est lui qui
+     hot vaut 0 sous 35 % de jauge puis monte au carré : c'est lui qui
      pilote à la fois le risque de panne et l'usure de l'huile.         */
-  B.hot = Math.pow(clamp((B.temp - 0.55) / 0.45, 0, 1), 2);
+  B.hot = Math.pow(clamp((B.temp - 0.35) / 0.65, 0, 1), 2);
   if (running) {
-    /* Le carter tient ~0,6 jour à plein régime : une traversée menée au
-       taquet le vide presque, une traversée ménagée en garde le tiers. */
-    // très dépendant du régime : ménager le gaz garde de l'huile, et couper
-    // le moteur n'en consomme plus du tout
+    /* Le carter ne tient qu'un tiers de jour à plein régime. Très dépendant
+       du régime : ménager le gaz garde de l'huile, et couper le moteur
+       n'en consomme plus du tout.                                      */
     const wear = (0.15 + 0.85 * load) * (1 + 0.8 * B.hot);
     const was = B.oil;
-    B.oil = Math.max(0, B.oil - dt * wear / (L.dayLength * 0.62));
+    B.oil = Math.max(0, B.oil - dt * wear / (L.dayLength * 0.31));
     if (was > 0.25 && B.oil <= 0.25) {
       Game.flash("PRESSION D'HUILE BASSE — LE MOTEUR VA CHAUFFER", 4); Snd.sBeep(false);
     }
   }
   /* Température d'équilibre : la charge chauffe, l'huile basse aggrave.
-     On monte lentement, on redescend plus vite au ralenti, et très vite
-     moteur coupé (τ ≈ 3,5 s) — couper, c'est la vraie solution.        */
-  /* Plein gaz avec de l'huile fraîche plafonne juste sous l'alarme (78 %) :
-     c'est la chute d'huile qui fait passer dans le rouge.               */
+     Elle monte vite (τ ≈ 17 s) et redescend lentement (τ ≈ 62 s au
+     ralenti). Couper le moteur reste de loin le plus efficace, mais ça
+     prend quand même une dizaine de secondes.                          */
   const tTarget = running ? (0.15 + 0.63 * load) * (1 + (1 - B.oil) * 0.45) : 0;
-  const tRate = !running ? 0.28 : (tTarget > B.temp ? 0.030 : 0.055);
+  const tRate = !running ? 0.080 : (tTarget > B.temp ? 0.060 : 0.016);
   B.temp = clamp(B.temp + (tTarget - B.temp) * Math.min(1, tRate * dt), 0, 1);
   B.tempWarn -= dt;
   if (B.temp > 0.88 && B.tempWarn <= 0) {
@@ -139,12 +137,13 @@ function updateBoat(dt, t) {
   }
 
   if (running) {
-    /* Risque de panne : le taux de base du niveau, plus un terme propre à
-       la surchauffe, le tout multiplié par dix à la limite. Les 25 s de
-       répit après un démarrage ne protègent plus si le moteur cuit.    */
-    const rate = (L.failRate + 0.0016 * B.hot) * (1 + 9 * B.hot);
-    const armed = B.engineOk > 25 || B.hot > 0.15;
-    if (B.sputter <= 0 && rate > 0 && armed && Math.random() < rate * dt) {
+    /* Une panne peut tomber à n'importe quel moment, même moteur froid :
+       le taux de base du niveau s'applique toujours. La température le
+       multiplie jusqu'à douze fois dans le rouge. Pas de période de
+       grâce — mais le moteur démarre froid, ce qui protège de fait les
+       premières secondes.                                             */
+    const rate = L.failRate * (1 + 11 * B.hot);
+    if (B.sputter <= 0 && Math.random() < rate * dt) {
       B.sputter = 2.0; Snd.sSputter();
     }
     B.engineOk += dt;
