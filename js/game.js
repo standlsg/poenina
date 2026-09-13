@@ -148,6 +148,10 @@ const CODEMAP = {
 };
 const KEYMAP = { z: "up", w: "up", s: "down", q: "left", d: "right", a: "anchor" };
 
+/* Commande développeur secrète : taper ZQSDZQSD dans le menu Échap saute
+   le niveau en cours. Le buffer ne retient que les 8 dernières touches.  */
+let cheatSeq = "";
+
 function onKey(e, down) {
   const act = CODEMAP[e.code] || KEYMAP[(e.key || "").toLowerCase()];
   if (act) { Input[act] = down ? 1 : 0; e.preventDefault(); }
@@ -159,6 +163,18 @@ function onKey(e, down) {
   if (k === "n" && Game.state === "pause") Game.newGame();
   if (e.code === "KeyE" || k === "e") Game.toggleEngine();
   if (k === "m") Game.flash(Snd.toggleMute() ? "SON COUPÉ" : "SON ACTIVÉ", 1.2);
+  /* --- cheat : ZQSDZQSD en pause => niveau suivant --- */
+  if (Game.state === "pause" && "zqsd".includes(k)) {
+    cheatSeq = (cheatSeq + k).slice(-8);
+    if (cheatSeq === "zqsdzqsd") {
+      cheatSeq = "";
+      if (L.n >= CFG.MAXLEVEL) { Game.flash("DÉJÀ AU DERNIER NIVEAU", 2); return; }
+      Game.flash("NIVEAU PASSÉ (DEV)", 2);
+      Game.next();
+    }
+  } else if (Game.state !== "pause") {
+    cheatSeq = "";
+  }
 }
 window.addEventListener("keydown", e => onKey(e, true));
 window.addEventListener("keyup", e => onKey(e, false));
@@ -179,85 +195,57 @@ function frame(now) {
 
   /* ---------------------------- mise à jour --------------------------- */
   if (st === "play") {
-    const tgt = Input.up ? 1 : Input.down ? -0.4 : 0;
-    B.thr += (tgt - B.thr) * Math.min(1, dt * 2.2);
-    const s = (Input.right ? 1 : 0) - (Input.left ? 1 : 0);
-    B.steer += (s - B.steer) * Math.min(1, dt * 6);
-
+    updateBoat(dt, Snd.__t);
+    updateFauna(dt, Snd.__t);
+    updateParts(dt);
+    updateCurrentParticles(dt, Snd.__t);
+    const sp = Math.hypot(B.vx, B.vy);
+    cam.x += (B.x - cam.x) * Math.min(1, dt * 4);
+    cam.y += (B.y - cam.y) * Math.min(1, dt * 4);
+    if (cam.shake > 0) {
+      cam.shake = Math.max(0, cam.shake - dt * 14);
+      SHX = (Math.random() - 0.5) * cam.shake * 2;
+      SHY = (Math.random() - 0.5) * cam.shake * 2;
+    } else SHX = SHY = 0;
+    /* moteur : son + indicateur de charge pour la chauffe */
+    if (B.engineOn && B.engineDead === 0 && B.starting <= 0) {
+      const load = Math.abs(B.thr);
+      Snd.setEngine(0.35 + 0.65 * load, load);
+    } else Snd.setEngine(0, 0);
+    /* le soleil descend : la traversée s'use, le jour décline */
     L.time += dt;
-    /* La nuit n'est plus une fin de partie : c'est un durcissement. On perd
-       les couleurs et la vue porte à peine plus loin que le bateau.      */
-    L.sun = L.night
-      ? NIGHT_SUN + (1 - NIGHT_SUN) * clamp(L.time / L.dayLength, 0, 1)
-      : clamp(L.time / L.dayLength, 0, 1);
+    const dayFrac = L.time / L.dayLength;
+    L.sun = L.night ? clamp(NIGHT_SUN + dayFrac * 0.07, 0, 1)
+      : clamp(dayFrac, 0, 1);
     SUN = sunParams(L.sun);
-    if (!L.nightFlashed && L.sun > 0.97) {
+    if (!L.nightFlashed && L.sun > 0.84 && L.n) {
       L.nightFlashed = true;
       Game.flash("LA NUIT EST TOMBÉE — ON NAVIGUE À LA CARTE", 4);
-      Snd.sBeep(false);
     }
-
-    updateBoat(dt, L.time);
-    updateFauna(dt, L.time);
-    updateCurrentParticles(dt, L.time);
-    updateParts(dt);
-
-    const running = B.engineOn && B.engineDead === 0 && B.starting <= 0;
-    Snd.setEngine(running ? 0.55 + 0.45 * Math.abs(B.thr) : 0, running ? clamp(Math.abs(B.thr), 0, 1) : 0);
-    Snd.setSurf(clamp(1.25 - (L.reefX(B.y) - B.x) / 55, 0.15, 1.25));
-    Snd.intensity = (B.engineDead > 0) ? 0.5 : (L.n >= 3 ? 2 : 1);
-
-    // vapeur au capot moteur quand ça cuit vraiment
-    if (B.temp > 0.86 && Math.random() < dt * 7) {
-      const c = Math.cos(B.h), s2 = Math.sin(B.h);
-      spawnSpray(B.x - 4.2 * c, B.y - 4.2 * s2, 0.5);
-    }
+    if (!L.night && L.sun >= 1) { Game.die("nuit"); return; }
   }
+
+  /* ---------------------------- rendu -------------------------------- */
+  if (st !== "loading") drawWorld(Snd.__t);
+
+  /* ---------------------------- surcouches -------------------------- */
+  if (st === "loading") {
+    requestAnimationFrame(() => { Game.doLoad(); last = performance.now(); requestAnimationFrame(frame); });
+  } else if (st === "title") overlayTitle(Snd.__t);
+  else if (st === "brief") overlayBrief(Snd.__t);
+  else if (st === "pause") overlayPause(Snd.__t);
   else if (st === "dead") {
     Game.deadT += dt;
-    updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
-    updateCurrentParticles(dt, L.time);
-    // bulles et remous pendant que le bateau s'enfonce
-    if (B.dead !== "sable" && B.dead !== "nuit") {
-      if (B.sinking < 0.95 && Math.random() < dt * 22) spawnRipple(B.x + (Math.random() - 0.5) * 8, B.y + (Math.random() - 0.5) * 8, 0.25);
-      if (B.sinking < 0.5 && Math.random() < dt * 6) spawnDebris(B.x, B.y);
-    }
-    Snd.setEngine(0, 0);
-  }
-  else if (st === "win") {
+    if (L.night) overlayNight(Snd.__t);
+    else overlayDead(Snd.__t);
+  } else if (st === "win") {
     Game.winT += dt;
-    updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
-    updateCurrentParticles(dt, L.time);
-  }
-  else if (st === "brief") updateFauna(dt, 0);
+    if (L.n >= CFG.MAXLEVEL) overlayEnd(Snd.__t);
+    else overlayWin(Snd.__t);
+  } else if (st === "done") overlayEnd(Snd.__t);
 
-  /* ------------------------------ caméra ------------------------------ */
-  if (st === "play" || st === "dead" || st === "win" || st === "pause" || st === "brief") {
-    const lead = 16;
-    const tx = B.x + Math.cos(B.h) * lead * 0.35 + (B.vx + B.cx + B.lx) * 2.4;
-    const ty = B.y + Math.sin(B.h) * lead * 0.35 + (B.vy + B.cy + B.ly) * 2.4;
-    const k = Math.min(1, dt * 2.6);
-    cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
-    cam.shake *= Math.pow(0.02, dt);
-    SHX = (Math.random() - 0.5) * cam.shake * 2.4;
-    SHY = (Math.random() - 0.5) * cam.shake * 2.4;
-  }
+  if (Game.msgT > 0 && (st === "play" || st === "brief")) drawMessage();
 
-  /* ------------------------------ rendu ------------------------------- */
-  if (st === "title") { titleScreen(Snd.__t); requestAnimationFrame(frame); return; }
-  if (st === "done") { doneScreen(Snd.__t); requestAnimationFrame(frame); return; }
-  if (st === "loading") {
-    loadingOverlay();
-    requestAnimationFrame(() => { Game.doLoad(); last = performance.now(); requestAnimationFrame(frame); });
-    return;
-  }
-
-  drawWorld(Snd.__t);
-  drawHUD(Snd.__t);
-  if (st === "brief") briefScreen(Snd.__t);
-  if (st === "pause") pauseOverlay(Snd.__t);
-  // on laisse l'animation de naufrage se dérouler avant le panneau
-  const wait = (B.dead === "sable" || B.dead === "nuit") ? 1.3 : 3.4;
   if (st === "dead" && Game.deadT > wait) overlayEnd(Snd.__t);
   if (st === "win" && Game.winT > 1.35) overlayEnd(Snd.__t);
 
