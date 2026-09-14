@@ -1055,35 +1055,35 @@ function drawFishers(t) {
         const wave = Math.sin(t * 11) * 0.5; // bras qui s'agitent vite
         ctx.save(); ctx.translate(px, py);
         ctx.globalAlpha = aa;
-        // bouee ronde rayee rouge et blanche : segments verticaux (colonnes)
+        // bouee ronde rayee rouge et blanche (agrandie) : segments verticaux
         // 1/3 rouge a gauche, blanc au centre, 1/3 rouge a droite.
         ctx.save();
-        ctx.beginPath(); ctx.ellipse(0, 0, 4.0, 3.4, 0, 0, TAU); ctx.clip();
+        ctx.beginPath(); ctx.ellipse(0, 0, 5.6, 4.7, 0, 0, TAU); ctx.clip();
         ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge gauche
-        ctx.fillRect(-4.0, -3.4, 1.33, 6.8);
+        ctx.fillRect(-5.6, -4.7, 1.87, 9.4);
         ctx.fillStyle = "rgb(255,255,255)";             // colonne blanche centrale
-        ctx.fillRect(-1.33, -3.4, 2.66, 6.8);
+        ctx.fillRect(-1.87, -4.7, 3.74, 9.4);
         ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge droite
-        ctx.fillRect(1.33, -3.4, 2.67, 6.8);
+        ctx.fillRect(1.87, -4.7, 3.73, 9.4);
         ctx.restore();
         // contour fonce de la bouee
-        ctx.strokeStyle = rgba(P.line, 0.85); ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.ellipse(0, 0, 4.0, 3.4, 0, 0, TAU); ctx.stroke();
-        // pecheur agrippe a la bouee : tete plus grande
+        ctx.strokeStyle = rgba(P.line, 0.85); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.ellipse(0, 0, 5.6, 4.7, 0, 0, TAU); ctx.stroke();
+        // pecheur agrippe a la bouee : tete plus grande (proportionnelle)
         ctx.fillStyle = "rgba(70,50,36,0.96)";
-        ctx.beginPath(); ctx.arc(0, -1.8, 1.15, 0, TAU); ctx.fill();
-        // chapeau de paille (jaune paille) vu de dessus, plus grand
+        ctx.beginPath(); ctx.arc(0, -2.4, 1.55, 0, TAU); ctx.fill();
+        // chapeau de paille (meme couleur que sur la barque), plus grand
         ctx.fillStyle = "rgba(238,214,138,0.97)";
-        ctx.strokeStyle = rgba(P.line, 0.5); ctx.lineWidth = 0.5;
-        ctx.beginPath(); ctx.ellipse(0, -1.9, 2.0, 1.75, 0, 0, TAU); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "rgba(190,158,96,0.9)";
-        ctx.beginPath(); ctx.ellipse(0, -1.9, 1.15, 1.0, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = rgba(P.line, 0.55); ctx.lineWidth = 0.7;
+        ctx.beginPath(); ctx.ellipse(0, -2.5, 2.8, 2.45, 0, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(196,168,104,0.9)";   // calotte (meme que barque)
+        ctx.beginPath(); ctx.ellipse(0, -2.5, 1.5, 1.3, 0, 0, TAU); ctx.fill();
         // deux bras plus longs qui s'agitent de haut en bas (haut/bas = -y/+y)
-        ctx.strokeStyle = "rgba(70,50,36,0.96)"; ctx.lineWidth = 1.3; ctx.lineCap = "round";
+        ctx.strokeStyle = "rgba(70,50,36,0.96)"; ctx.lineWidth = 1.7; ctx.lineCap = "round";
         for (const s2 of [-1, 1]) {
           ctx.beginPath();
-          ctx.moveTo(s2 * 1.0, -0.7);
-          ctx.lineTo(s2 * 2.6, -0.7 + wave * 2.2);
+          ctx.moveTo(s2 * 1.4, -0.9);
+          ctx.lineTo(s2 * 3.6, -0.9 + wave * 3.0);
           ctx.stroke();
         }
         ctx.lineCap = "butt";
@@ -1151,6 +1151,13 @@ function drawFishers(t) {
     ctx.beginPath(); ctx.ellipse(0.2, -0.02, 0.78, 0.68, 0, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "rgba(196,168,104,0.9)";   // calotte du chapeau
     ctx.beginPath(); ctx.ellipse(0.2, -0.02, 0.42, 0.36, 0, 0, TAU); ctx.fill();
+    // canne a peche : perche fine tenue a la main, pointee vers l'avant-tribord,
+    // depassant de la proue, avec un bout de ligne pendant dans l'eau.
+    ctx.strokeStyle = "rgba(54,36,22,0.96)"; ctx.lineWidth = 0.07; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(0.4, 0.5); ctx.lineTo(3.7, 1.15); ctx.stroke();
+    ctx.strokeStyle = "rgba(236,232,210,0.9)"; ctx.lineWidth = 0.04;
+    ctx.beginPath(); ctx.moveTo(3.7, 1.15); ctx.lineTo(3.85, 1.95); ctx.stroke();
+    ctx.lineCap = "butt";
     ctx.restore();
   }
 }
