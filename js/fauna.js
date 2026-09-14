@@ -26,7 +26,7 @@ function makeFauna(kind, x, y, rng) {
 function updateFauna(dt, t) {
   dt *= CFG.VIS;                       // même dilatation du temps que le bateau
   for (const f of L.fauna) {
-    f.ph += dt * (f.kind === "dauphin" ? 5 : f.kind === "banc" ? 4.5 : 2);
+    f.ph += dt * (f.kind === "dauphin" ? 2.5 : f.kind === "banc" ? 4.5 : 2);
     f.wander += (Math.random() - 0.5) * dt * 1.5;
     const sx = L.shoreX(f.y), rx = L.reefX(f.y);
     let steer = Math.sin(f.wander) * 0.5;
