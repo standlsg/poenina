@@ -238,16 +238,23 @@ function updateBoat(dt, t) {
     const damp = Math.pow(0.7, dt);           // 30 %/s
     const k = (damp - 1) / h;
     ax += B.vx * k; ay += B.vy * k;
+  } else if (intoWind && erreSpeed > 0.05) {
+    const damp = Math.pow(0.78, dt);          // 22 %/s, voile fassée = parachute
+    const k = (damp - 1) / h;
+    ax += B.vx * k; ay += B.vy * k;
   }
   B.vx += ax * h; B.vy += ay * h;
 
   /* --------------------- barre : il faut de l'erre --------------------- */
   /* À l'écran l'axe y est inversé : un cap qui croît tourne vers la gauche.
      D'où le signe, pour que D = tribord et Q = bâbord.                   */
-   /* Manoeuvrabilité : pleine au-dessus de 1 kt, ÷2 sous 1 kt, ÷4 sous
-     0,5 kt — un safran a besoin d'eau qui circule pour porter.      */
+   /* Manoeuvrabilité : la portance d'un safran va en v³. Pleine autorité
+     à 1 kt d'erre, puis chute vite — ÷8 à 0,5 kt, ÷64 à 0,25 kt,
+     quasi nulle à l'arrêt. C'est ce qui fait rater un virement pris
+     trop tard : le bateau s'enfonce dans le cone, ralentit, perd son
+     safran et reste figé face au vent.                          */
   const vm = Math.abs(vf);
-  const rudder = clamp(vm > 0.514 ? 1 : vm > 0.257 ? 0.5 : 0.25, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
+  const rudder = clamp(Math.pow(vm / 0.514, 3), 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
   const want = -B.steer * 0.72 * rudder * (vf < -0.2 ? -1 : 1);
   B.yaw += (want - B.yaw) * Math.min(1, h * 3.4);
 
