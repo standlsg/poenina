@@ -1053,9 +1053,9 @@ function drawFishers(t) {
         ctx.globalAlpha = 1 - sk * 0.85;
         ctx.fillStyle = "rgba(120,82,52,0.95)";
         ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.18;
-        ctx.beginPath(); ctx.moveTo(2.2, 0); ctx.quadraticCurveTo(1.4, 0.9, -1.0, 0.95);
-        ctx.quadraticCurveTo(-2.0, 0.9, -2.2, 0); ctx.quadraticCurveTo(-2.0, -0.9, -1.0, -0.95);
-        ctx.quadraticCurveTo(1.4, -0.9, 2.2, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(3.0, 0); ctx.quadraticCurveTo(2.0, 0.92, -1.0, 0.98);
+        ctx.quadraticCurveTo(-2.7, 0.9, -3.0, 0); ctx.quadraticCurveTo(-2.7, -0.9, -1.0, -0.98);
+        ctx.quadraticCurveTo(2.0, -0.92, 3.0, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.restore();
       }
       // une fois la barque disparue : le pêcheur flotte, bras agités, bouée orange opaque
@@ -1096,7 +1096,7 @@ function drawFishers(t) {
     // ombre portée légère
     ctx.save(); ctx.translate(px + 2, py + 3); ctx.rotate(-f.h); ctx.scale(CFG.K, CFG.K);
     ctx.fillStyle = rgba(P.line, 0.16);
-    ctx.beginPath(); ctx.ellipse(0, 0, 2.4, 1.0, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, 3.1, 1.0, 0, 0, TAU); ctx.fill();
     ctx.restore();
     // barque de pêche : pirogue effilée, bois clair, liseré foncé, cap = avant (+x)
     ctx.save();
@@ -1105,24 +1105,24 @@ function drawFishers(t) {
     ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.18;
     ctx.fillStyle = "rgba(150,104,66,0.95)";
     ctx.beginPath();
-    ctx.moveTo(2.4, 0);
-    ctx.quadraticCurveTo(1.6, 0.95, -1.0, 0.98);
-    ctx.quadraticCurveTo(-2.1, 0.9, -2.4, 0);
-    ctx.quadraticCurveTo(-2.1, -0.9, -1.0, -0.98);
-    ctx.quadraticCurveTo(1.6, -0.95, 2.4, 0);
+    ctx.moveTo(3.2, 0);
+    ctx.quadraticCurveTo(2.2, 1.0, -1.0, 1.02);
+    ctx.quadraticCurveTo(-2.7, 0.92, -3.0, 0);
+    ctx.quadraticCurveTo(-2.7, -0.92, -1.0, -1.02);
+    ctx.quadraticCurveTo(2.2, -1.0, 3.2, 0);
     ctx.closePath(); ctx.fill(); ctx.stroke();
     // pont plus clair
     ctx.fillStyle = "rgba(186,140,96,0.9)";
-    ctx.beginPath(); ctx.ellipse(-0.1, 0, 1.6, 0.66, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-0.2, 0, 2.1, 0.7, 0, 0, TAU); ctx.fill();
     // petit moteur hors-bord à l'arrière (poupe = -x)
     ctx.fillStyle = "rgba(40,40,44,0.95)";
     ctx.strokeStyle = rgba(P.line, 0.7); ctx.lineWidth = 0.12;
-    ctx.beginPath(); ctx.rect(-2.7, -0.32, 0.6, 0.64); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.rect(-3.3, -0.34, 0.6, 0.68); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "rgba(70,70,76,0.95)";
-    ctx.beginPath(); ctx.rect(-2.5, -0.18, 0.32, 0.36); ctx.fill();
+    ctx.beginPath(); ctx.rect(-3.1, -0.18, 0.32, 0.36); ctx.fill();
     // hélice / remous arrière
     ctx.strokeStyle = rgba(P.foam, 0.4); ctx.lineWidth = 0.12;
-    ctx.beginPath(); ctx.arc(-2.9, 0, 0.34, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-3.5, 0, 0.34, 0, TAU); ctx.stroke();
     // le pêcheur : buste sombre + chapeau de paille jaune vu de dessus
     ctx.fillStyle = "rgba(50,38,30,0.95)";
     ctx.beginPath(); ctx.arc(0.2, 0, 0.5, 0, TAU); ctx.fill();

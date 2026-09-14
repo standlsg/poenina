@@ -173,7 +173,7 @@ function updateFishers(dt, t) {
     // sillage à l'arrière de la barque (moteur)
     const moved = Math.hypot(f.x - px0, f.y - py0);
     if (moved > 0.004 && Math.random() < dt * 8) {
-      spawnRipple(f.x - Math.cos(f.h) * 2.4, f.y - Math.sin(f.h) * 2.4, 0.22);
+      spawnRipple(f.x - Math.cos(f.h) * 3.4, f.y - Math.sin(f.h) * 3.4, 0.22);
     }
   }
 }
