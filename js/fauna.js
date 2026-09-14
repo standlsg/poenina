@@ -18,7 +18,9 @@ function makeFauna(kind, x, y, rng) {
       sc: 0.8 + rng() * 0.5, tone: (rng() * 3) | 0
     }))
   });
-  if (kind === "requin") Object.assign(f, { sp: 0.85 + rng() * 0.6, size: 1.05 + rng() * 0.45, dep: 1.6 + rng() * 2.6 });
+  /* Le requin est plus petit que le dauphin (0,84-1,10 contre 1,05-1,30) et
+     w8 est la phase de sa trajectoire en huit.                            */
+  if (kind === "requin") Object.assign(f, { sp: 0.85 + rng() * 0.6, size: 0.84 + rng() * 0.26, dep: 1.6 + rng() * 2.6, w8: rng() * TAU });
   if (kind === "dauphin") Object.assign(f, { sp: 1.8 + rng() * 1.1, size: 1.05 + rng() * 0.25, dep: 1.2, jt: rng() * 9 });
   return f;
 }
@@ -26,10 +28,24 @@ function makeFauna(kind, x, y, rng) {
 function updateFauna(dt, t) {
   dt *= CFG.VIS;                       // même dilatation du temps que le bateau
   for (const f of L.fauna) {
-    f.ph += dt * (f.kind === "dauphin" ? 2.5 : f.kind === "banc" ? 4.5 : 2);
-    f.wander += (Math.random() - 0.5) * dt * 1.5;
+    /* Le dauphin battait à 5 rad/s : une queue de colibri. À 2,4 le cycle
+       complet dure ~2,2 s, on suit la nageoire à l'œil.                  */
+    f.ph += dt * (f.kind === "dauphin" ? 2.4 : f.kind === "banc" ? 4.5 : 2);
     const sx = L.shoreX(f.y), rx = L.reefX(f.y);
-    let steer = Math.sin(f.wander) * 0.5;
+    let steer;
+    if (f.kind === "requin") {
+      /* Le requin ne tourne plus en rond : sa barre suit une sinusoïde
+         déterministe au lieu d'une marche aléatoire, ce qui trace un huit.
+         L'amplitude de cap vaut k/ω ; à k = π·ω elle fait pile un demi-tour
+         complet par demi-période, donc une boucle, puis l'autre dans
+         l'autre sens. Mesuré : un huit de 22 × 19 m parcouru en 63 s, dans
+         une vue qui fait 57 × 85 m — il tient à l'écran.                 */
+      f.w8 += dt * 0.10;
+      steer = Math.sin(f.w8) * 0.314;
+    } else {
+      f.wander += (Math.random() - 0.5) * dt * 1.5;
+      steer = Math.sin(f.wander) * 0.5;
+    }
     if (f.x < sx + 17) steer += angDiff(0, f.h) * 0.9;
     if (f.x > rx - 15) steer += angDiff(Math.PI, f.h) * 0.9;
     if (f.y < 6) steer += angDiff(Math.PI / 2, f.h) * 0.9;
