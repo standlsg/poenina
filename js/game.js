@@ -234,7 +234,7 @@ function frame(now) {
     // collision barques de peche : test cercle vs coque (OBB) du catamaran,
     // pas centre-a-centre (la proue et le bau comptaient avant -> trop permissif).
     if (L.fishers && B.alive && B.invuln <= 0) {
-      const FR = 1.6;                  // rayon d'encombrement de la barque (m)
+      const FR = 2.1;                  // rayon d'encombrement de la barque (m)
       const HL = 5.1, HW = 2.6;        // demi-longueur / demi-largeur coque cata (m)
       const ch = Math.cos(B.h), sh = Math.sin(B.h);
       for (const f of L.fishers) {

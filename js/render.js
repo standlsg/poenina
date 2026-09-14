@@ -1102,8 +1102,8 @@ function drawFishers(t) {
           const a = f.trail[i], b = f.trail[i + 1];
           const am = (a.a + b.a) * 0.5;
           if (am <= 0.01) continue;
-          const x0 = a.x - Math.cos(a.h) * 3.4, y0 = a.y - Math.sin(a.h) * 3.4;
-          const x1 = b.x - Math.cos(b.h) * 3.4, y1 = b.y - Math.sin(b.h) * 3.4;
+          const x0 = a.x - Math.cos(a.h) * 4.9, y0 = a.y - Math.sin(a.h) * 4.9;
+          const x1 = b.x - Math.cos(b.h) * 4.9, y1 = b.y - Math.sin(b.h) * 4.9;
           ctx.beginPath();
           ctx.moveTo(sX(x0), sY(y0)); ctx.lineTo(sX(x1), sY(y1));
           ctx.strokeStyle = rgba(P.foam, am * pass.b); ctx.lineWidth = pass.w;
@@ -1112,16 +1112,17 @@ function drawFishers(t) {
       }
       ctx.lineCap = "butt"; ctx.lineJoin = "miter";
     }
-    // ombre portee legere
+    // ombre portee legere (barque agrandie)
     ctx.save(); ctx.translate(px + 2, py + 3); ctx.rotate(-f.h); ctx.scale(CFG.K, CFG.K);
     ctx.fillStyle = rgba(P.line, 0.16);
-    ctx.beginPath(); ctx.ellipse(0, 0, 3.1, 1.0, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, 4.5, 1.45, 0, 0, TAU); ctx.fill();
     ctx.restore();
     // barque de peche : pirogue effilee, bois clair, lisele fonce, cap = avant (+x)
     ctx.save();
     ctx.translate(px, py); ctx.rotate(-f.h); ctx.scale(CFG.K, CFG.K);
+    ctx.scale(1.45, 1.45);                // agrandissement de la barque
     ctx.lineJoin = "round";
-    ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.18;
+    ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.12;
     ctx.fillStyle = "rgba(150,104,66,0.95)";
     ctx.beginPath();
     ctx.moveTo(3.2, 0);
@@ -1135,18 +1136,18 @@ function drawFishers(t) {
     ctx.beginPath(); ctx.ellipse(-0.2, 0, 2.1, 0.7, 0, 0, TAU); ctx.fill();
     // petit moteur hors-bord a l'arriere (poupe = -x)
     ctx.fillStyle = "rgba(40,40,44,0.95)";
-    ctx.strokeStyle = rgba(P.line, 0.7); ctx.lineWidth = 0.12;
+    ctx.strokeStyle = rgba(P.line, 0.6); ctx.lineWidth = 0.08;
     ctx.beginPath(); ctx.rect(-3.3, -0.34, 0.6, 0.68); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "rgba(70,70,76,0.95)";
     ctx.beginPath(); ctx.rect(-3.1, -0.18, 0.32, 0.36); ctx.fill();
     // helice / remous arriere
-    ctx.strokeStyle = rgba(P.foam, 0.4); ctx.lineWidth = 0.12;
+    ctx.strokeStyle = rgba(P.foam, 0.4); ctx.lineWidth = 0.08;
     ctx.beginPath(); ctx.arc(-3.5, 0, 0.34, 0, TAU); ctx.stroke();
     // le pecheur : buste sombre + chapeau de paille jaune vu de dessus
     ctx.fillStyle = "rgba(50,38,30,0.95)";
     ctx.beginPath(); ctx.arc(0.2, 0, 0.5, 0, TAU); ctx.fill();
     ctx.fillStyle = "rgba(238,214,138,0.97)";   // chapeau de paille
-    ctx.strokeStyle = rgba(P.line, 0.55); ctx.lineWidth = 0.12;
+    ctx.strokeStyle = rgba(P.line, 0.55); ctx.lineWidth = 0.08;
     ctx.beginPath(); ctx.ellipse(0.2, -0.02, 0.78, 0.68, 0, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "rgba(196,168,104,0.9)";   // calotte du chapeau
     ctx.beginPath(); ctx.ellipse(0.2, -0.02, 0.42, 0.36, 0, 0, TAU); ctx.fill();

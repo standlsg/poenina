@@ -278,20 +278,6 @@ function drawHUD(t) {
     txt((cm * KN).toFixed(1) + " KT", cxp + cw / 2, cyp + 48, 7, UI.ink, "center");
   }
 
-  /* --- chevron vers le mouillage --- */
-  const ax = sX(L.anch.x), ay = sY(L.anch.y);
-  if (ax < 30 || ax > W - 30 || ay < 70 || ay > H - 70) {
-    const a = Math.atan2(ay - H / 2, ax - W / 2), rr2 = Math.min(W, H) * 0.42;
-    const px = W / 2 + Math.cos(a) * rr2, py = H / 2 + Math.sin(a) * rr2;
-    ctx.fillStyle = "rgba(255,201,74," + (0.5 + 0.4 * Math.sin(t * 3)) + ")";
-    ctx.beginPath();
-    ctx.moveTo(px + Math.cos(a) * 8, py + Math.sin(a) * 8);
-    ctx.lineTo(px + Math.cos(a + 2.4) * 8, py + Math.sin(a + 2.4) * 8);
-    ctx.lineTo(px + Math.cos(a - 2.4) * 8, py + Math.sin(a - 2.4) * 8);
-    ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = "rgba(6,22,32,0.8)"; ctx.lineWidth = 1; ctx.stroke();
-  }
-
   /* --- messages --- */
   let msg = null, mc = UI.gold;
   if (B.inAnch && !B.anchored) {

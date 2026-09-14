@@ -333,7 +333,7 @@ function buildLevel(n, seedExtra) {
       const mode = rng() < 0.5 ? "circle" : "pendulum";
       L.fishers.push({
         bx: cx, by: y, x: cx, y: y, h: rng() * TAU, ph: rng() * TAU,
-        mode, amp: 7 + rng() * 6, spd: 0.16 + rng() * 0.08, h0: rng() * TAU,
+        mode, amp: 7 + rng() * 6, spd: 0.34 + rng() * 0.16, h0: rng() * TAU,
         sunken: 0, drifted: false, dx: 0, dy: 0, beached: false
       });
     }
