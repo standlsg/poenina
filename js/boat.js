@@ -237,17 +237,20 @@ function updateBoat(dt, t) {
   const want = -B.steer * 0.72 * rudder * (vf < -0.2 ? -1 : 1);
   B.yaw += (want - B.yaw) * Math.min(1, h * 3.4);
 
-  /* Sans propulsion et à l'arrêt : le bateau présente son flanc à la
-     dérive (ancre flottante). Il s'oriente travers à la dérive combinée
-     vent+courant en ~3 s, puis dérive à pleine force.                */
-  if (!hasProp && Math.hypot(B.vx, B.vy) < 0.1) {
+ /* Sans propulsion et presque à l'arrêt : le bateau présente son flanc à
+     la dérive (ancre flottante). Il loffe travers à la dérive combinée
+     vent+courant à vitesse fixe (~1 rad/s → 180° en ~3 s).         */
+  if (!hasProp && Math.hypot(B.vx, B.vy) < 0.3) {
     const driftDir = Math.atan2(B.ly + B.cy, B.lx + B.cx);
     let target = driftDir + Math.PI / 2;     // travers = perpendiculaire à la dérive
     if (Math.abs(angDiff(target, B.h)) > Math.PI / 2) target += Math.PI;  // côté le plus court
-    B.h += angDiff(target, B.h) * Math.min(1, dt / 3);
+    const diff = angDiff(target, B.h);
+    const rate = 1.0;                       // rad/s : ~57°/s
+    B.h = (B.h + clamp(diff, -rate * dt, rate * dt)) % TAU;
+    B.yaw = 0;                              // la loffe remplace la barre
+  } else {
+    B.h = (B.h + B.yaw * h) % TAU;
   }
-  B.h = (B.h + B.yaw * h) % TAU;
-
   /* Application de la position : courant toujours plein, dérive vent
      atténuée par √(1 − erre/vfMax), vfMax = 0,25 m/s (≈ 0,5 kt).     */
   const att = Math.sqrt(1 - clamp(Math.hypot(B.vx, B.vy) / 0.25, 0, 1));
