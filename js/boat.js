@@ -218,15 +218,13 @@ function updateBoat(dt, t) {
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
 
-  /* Sans propulsion : l'erre part vite (~2 kt/s), frein franc jusqu'à
-     l'arrêt. Une fois arrêté, la dérive prend le relais et le bateau
-     loffe travers à la dérive (voir plus bas).                       */
+   /* Sans propulsion : l'erre décroît progressivement (~30 %/s), ce qui
+     laisse au bateau assez d'élan pour virer de bord face au vent.   */
   const erreSpeed = Math.hypot(B.vx, B.vy);
-  if (!hasProp && erreSpeed > 0.05) {
-    const brake = 1.03;                       // m/s² ≈ 2 kt/s
-    const cap = Math.min(erreSpeed / h, brake);
-    ax -= B.vx / erreSpeed * cap;
-    ay -= B.vy / erreSpeed * cap;
+  if (noProp && erreSpeed > 0.05) {
+    const damp = Math.pow(0.7, dt);            // 30 % de vitesse perdue par seconde
+    const k = (damp - 1) / h;                  // accélération équivalente
+    ax += B.vx * k; ay += B.vy * k;
   }
   B.vx += ax * h; B.vy += ay * h;
 
