@@ -315,7 +315,7 @@ function updateBoat(dt, t) {
   // bien centrer le cata sur la patate pour heurter.
   let patateHit = false;
   if (B.invuln <= 0) {
-    const HL = 5.1, HW = 1.7;           // demi-longueur / tiers central de la demi-largeur
+    const HL = 5.1, HW = 1.35;          // demi-longueur / quart central de la demi-largeur
     const ch = Math.cos(B.h), sh = Math.sin(B.h);
     // on sonde 3 tranches y adjacentes (patate a cheval sur une frontiere de bande)
     for (let bj = -1; bj <= 1 && !patateHit; bj++) {
@@ -328,7 +328,7 @@ function updateBoat(dt, t) {
         const ly = -dx * sh + dy * ch;  //                tribord (+y)
         const cx = clamp(lx, -HL, HL), cy = clamp(ly, -HW, HW);
         // coeur de la patate (0.72 x le rayon visuel), pas toute la masse orange
-        const hitR = shapeR(p, dx, dy) * 0.72;
+        const hitR = shapeR(p, dx, dy) * 0.6;
         if (Math.hypot(lx - cx, ly - cy) < hitR) { patateHit = true; break; }
       }
     }
