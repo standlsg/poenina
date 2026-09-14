@@ -110,9 +110,9 @@ function drawWindRose(cx, cy, r) {
     ctx.setLineDash([]);
   }
   const a = B.twa;
-  txt(Math.round(a) + "°", cx, cy + r + 10, 9, a < 42 ? UI.warn : UI.mint, "center");
-  txt(a < 42 ? "VENT DEBOUT" : a < 75 ? "AU PRÈS" : a < 110 ? "AU TRAVERS" : a < 150 ? "AU LARGUE" : "VENT ARR.",
-    cx, cy + r + 20, 7, a < 42 ? UI.warn : UI.dim, "center");
+  txt(Math.round(a) + "°", cx, cy + r + 10, 9, a < 55 ? UI.warn : UI.mint, "center");
+  txt(a < 55 ? "VENT DEBOUT" : a < 75 ? "AU PRÈS" : a < 110 ? "AU TRAVERS" : a < 150 ? "AU LARGUE" : "VENT ARR.",
+    cx, cy + r + 20, 7, a < 55 ? UI.warn : UI.dim, "center");
 }
 
 /* ------------------------------ minimap -------------------------------- */
