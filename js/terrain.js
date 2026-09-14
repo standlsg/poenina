@@ -262,9 +262,7 @@ function paintDecor(gl, gs) {
   for (let y = L.by0; y < L.by1; y += 11) {
     if (hash2((y | 0) * 7 + 3, 11) < 0.82) continue;
     const sx = L.shoreX(y) - 3 - hash2((y | 0), 5) * 6;
-    const x = tX(sx), yy = tY(y), s = Math.max(1.2, T * 0.9);
-    gs.fillStyle = "rgba(10,52,72,0.3)";
-    gs.beginPath(); gs.ellipse(x + T, yy + T * 1.3, s * 1.6, s * 0.7, 0, 0, TAU); gs.fill();
+    const x = tX(sx), yy = tY(y), s = Math.max(2.5, T * 1.8);
     gl.fillStyle = "rgba(214,96,72,0.95)";
     gl.strokeStyle = rgba(P.line, 0.75); gl.lineWidth = Math.max(1, T * 0.3);
     // carapace

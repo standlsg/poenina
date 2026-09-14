@@ -474,15 +474,15 @@ function drawWake() {
       ctx.beginPath(); ctx.arc(sX(x), sY(y), (1.6 + 2.6 * u) * CFG.K / 4.2, 0, TAU); ctx.fill();
     }
   }
-  // ondulations légères autour du bateau à l'arrêt : l'eau vit même sans erre
+  // ondulations autour du bateau à l'arrêt : l'eau vit même sans erre
   if (sp <= 0.25 && B.alive && !B.anchored) {
-    const t = Snd.__t, c = Math.cos(B.h), sn = Math.sin(B.h);
-    for (let k = 0; k < 2; k++) {
-      const ph = (t * 0.5 + k * 0.5) % 1;
-      if (ph > 0.85) continue;
-      const R = (3.5 + ph * 5) * CFG.K;
-      ctx.strokeStyle = rgba(P.foam, 0.22 * (1 - ph / 0.85));
-      ctx.lineWidth = 1.1;
+    const t = Snd.__t;
+    for (let k = 0; k < 3; k++) {
+      const ph = (t * 0.45 + k / 3) % 1;
+      if (ph > 0.9) continue;
+      const R = (4 + ph * 9) * CFG.K;
+      ctx.strokeStyle = rgba(P.foam, 0.35 * (1 - ph / 0.9));
+      ctx.lineWidth = 1.6;
       ctx.beginPath(); ctx.ellipse(sX(B.x), sY(B.y), R, R * 0.78, 0, 0, TAU); ctx.stroke();
     }
   }
@@ -1031,7 +1031,7 @@ function drawBird(t) {
   // se lit à l'envergure apparente : grande quand les ailes sont à plat,
   // quasi nulle quand elles montent ou descendent (vues par la tranche).
   // Deux pulsations par cycle (plat-tranche-plat-tranche), d'où |cos|.
-  const fl = 1.45 * (0.16 + 0.84 * Math.abs(Math.cos(bird.ph)));  // envergure
+  const fl = 14 * (0.18 + 0.82 * Math.abs(Math.cos(bird.ph)));  // demi-envergure en px
   const dir = bird.vx > 0 ? 1 : -1;
   ctx.save();
   ctx.translate(bird.x, bird.y);
@@ -1039,31 +1039,31 @@ function drawBird(t) {
   ctx.scale(bird.sc, bird.sc);
   // ombre portée lointaine sur l'eau, décalée vers le bas
   ctx.fillStyle = "rgba(14,43,58,0.12)";
-  ctx.beginPath(); ctx.ellipse(0, 8 / bird.sc, 9 * fl, 2.5, 0, 0, TAU); ctx.fill();
-  ctx.strokeStyle = "rgba(10,30,42,0.85)"; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.ellipse(0, 10, 9 + fl, 3, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(10,30,42,0.9)"; ctx.lineWidth = 1.3;
   ctx.lineJoin = "round";
   // ailes : deux formes symétriques perpendiculaires au vol, envergure = fl
   ctx.fillStyle = "rgba(28,40,52,0.92)";
   for (const s of [-1, 1]) {
     ctx.beginPath();
-    ctx.moveTo(0.6, s * 0.6);
-    ctx.quadraticCurveTo(0.2, s * fl, -1.8, s * fl * 0.92);
-    ctx.quadraticCurveTo(-2.6, s * fl * 0.5, -1.4, s * 0.6);
+    ctx.moveTo(1, s * 1);
+    ctx.quadraticCurveTo(-1, s * fl, -4, s * fl * 0.95);
+    ctx.quadraticCurveTo(-6, s * fl * 0.55, -3, s * 1.2);
     ctx.closePath();
     ctx.fill(); ctx.stroke();
   }
   // corps vu de dessus : ellipse allongée dans le sens du vol
-  ctx.fillStyle = "rgba(28,40,52,0.95)";
-  ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 1.5, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = "rgba(28,40,52,0.96)";
+  ctx.beginPath(); ctx.ellipse(0, 0, 7, 2.6, 0, 0, TAU); ctx.fill();
   ctx.stroke();
   // tête + bec vers l'avant
-  ctx.beginPath(); ctx.arc(3.6, 0, 1.5, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.lineWidth = 0.9;
-  ctx.beginPath(); ctx.moveTo(4.8, 0); ctx.lineTo(6.4, 0); ctx.stroke();
+  ctx.beginPath(); ctx.arc(6, 0, 2.4, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = 1.1;
+  ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(10.5, 0); ctx.stroke();
   // queue en éventail à l'arrière
   ctx.fillStyle = "rgba(28,40,52,0.88)";
   ctx.beginPath();
-  ctx.moveTo(-3.6, 0); ctx.lineTo(-5.8, -1.6); ctx.lineTo(-5.8, 1.6); ctx.closePath();
+  ctx.moveTo(-6, 0); ctx.lineTo(-10, -2.6); ctx.lineTo(-10, 2.6); ctx.closePath();
   ctx.fill(); ctx.stroke();
   ctx.restore();
 }
