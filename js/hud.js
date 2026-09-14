@@ -63,7 +63,7 @@ function drawWindRose(cx, cy, r) {
   panel(cx - r - 7, cy - r - 15, (r + 7) * 2, (r + 7) * 2 + 36);
   txt("VENT " + Math.round(L.windKn) + " KT", cx, cy - r - 4, 7, UI.dim, "center");
   const wa = L.windFrom;
-  // secteur mort : plein écran de 40° de part et d'autre du vent
+  // secteur mort : plein écran de 55° de part et d'autre du vent
   ctx.fillStyle = "rgba(255,110,100,0.2)";
   ctx.beginPath(); ctx.moveTo(cx, cy);
   ctx.arc(cx, cy, r, -wa - 55 * D2R, -wa + 55 * D2R); ctx.closePath(); ctx.fill();
