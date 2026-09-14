@@ -160,20 +160,23 @@ function updateFishers(dt, t) {
     f.ph += dt * f.spd;
     if (f.mode === "circle") {
       f.x = f.bx + Math.cos(f.ph) * f.amp;
-      f.y = f.by + Math.sin(f.ph) * f.amp * 0.7;
-      f.h = (f.ph + Math.PI / 2) % TAU;          // tangente : le bateau vire dans le virage
+      f.y = f.by + Math.sin(f.ph) * f.amp;
     } else {
       const s = Math.sin(f.ph);
       f.x = f.bx + Math.cos(f.h0 || 0) * s * f.amp;
       f.y = f.by + Math.sin(f.h0 || 0) * s * f.amp;
-      f.h = s > 0 ? (f.h0 || 0) : (f.h0 || 0) + Math.PI;
     }
     const sx = L.shoreX(f.y), rx = L.reefX(f.y);
     f.x = clamp(f.x, sx + 10, rx - 10);
-    // sillage à l'arrière de la barque (moteur)
-    const moved = Math.hypot(f.x - px0, f.y - py0);
-    if (moved > 0.004 && Math.random() < dt * 8) {
-      spawnRipple(f.x - Math.cos(f.h) * 3.4, f.y - Math.sin(f.h) * 3.4, 0.22);
+    // le cap suit toujours la direction reelle du deplacement : le bateau
+    // avance vers l'avant et pivote franchement dans le virage.
+    const vx = f.x - px0, vy = f.y - py0;
+    if (Math.hypot(vx, vy) > 0.003) f.h = Math.atan2(vy, vx);
+    // trace du sillage : on garde les dernieres positions pour dessiner une ligne
+    f.trail = f.trail || [];
+    if (Math.hypot(vx, vy) > 0.003) {
+      f.trail.push({ x: f.x, y: f.y, h: f.h, t: t });
+      if (f.trail.length > 16) f.trail.shift();
     }
   }
 }
