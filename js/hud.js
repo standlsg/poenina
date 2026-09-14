@@ -178,15 +178,15 @@ function drawHUD(t) {
 
   drawWindRose(W - 42, 50, 26);
 
-  /* --- bas gauche : vitesse fond, vitesse surface, gaz --- */
+   /* --- bas gauche : vitesse surface (principale), vitesse fond, gaz --- */
   const by = H - 58, bw = 112;
   panel(pad, by, bw, 52);
-  txt("VITESSE FOND", pad + 7, by + 11, 7, UI.dim);
-  const sp = Math.hypot(B.vx + B.cx + B.lx, B.vy + B.cy + B.ly) * KN;
+  txt("VITESSE SUR L'EAU", pad + 7, by + 11, 7, UI.dim);
+  const sp = Math.hypot(B.vx, B.vy) * KN;
   txt(sp.toFixed(1), pad + 7, by + 27, 19, UI.mint);
   txt("KT", pad + 9 + tw(sp.toFixed(1), 19), by + 27, 8, UI.dim);
-  // vitesse dans l'eau : l'écart avec la vitesse fond, c'est le courant
-  txt("sur l'eau " + (Math.hypot(B.vx, B.vy) * KN).toFixed(1) + " kt",
+  // vitesse fond : la surface + le courant déplace la masse d'eau
+  txt("fond " + (Math.hypot(B.vx + B.cx + B.lx, B.vy + B.cy + B.ly) * KN).toFixed(1) + " kt",
     pad + 7, by + 38, 7, UI.dim);
   txt("GAZ", pad + 7, by + 48, 7, UI.dim);
   bar(pad + 30, by + 42, bw - 38, 6, (B.thr + 0.4) / 1.4, "rgb(122,208,236)");
