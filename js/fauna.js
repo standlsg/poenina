@@ -57,6 +57,10 @@ function updateFauna(dt, t) {
       if (f.jt <= 0 && f.jump <= 0) { f.jump = 1; f.jt = 8 + Math.random() * 13; }
       if (f.jump > 0) { f.jump -= dt * 1.05; sp *= 1.9; }
     }
+    // sillage en surface derrière la raie et le requin (peu profonds)
+    if ((f.kind === "raie" || f.kind === "requin") && f.dep < 2.5 && Math.random() < dt * 3) {
+      spawnRipple(f.x - Math.cos(f.h) * 2.5, f.y - Math.sin(f.h) * 2.5, 0.25);
+    }
     f.x += Math.cos(f.h) * sp * dt; f.y += Math.sin(f.h) * sp * dt;
   }
 }

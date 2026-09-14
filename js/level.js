@@ -276,6 +276,8 @@ function buildLevel(n, seedExtra) {
   const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
   L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
   L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
+  L.windFrom0 = L.windFrom;          // cap de référence pour la dérive lente
+  L.windDrift = (rng() < 0.5 ? 1 : -1) * (0.014 + 0.012 * n / CFG.MAXLEVEL); // rad/s
   L.windPow = S.windPow;               // ce que subissent la voile et la coque
   L.windKn = S.windPow / 2;            // ce que lit l'anémomètre
 

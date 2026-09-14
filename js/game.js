@@ -219,6 +219,9 @@ function frame(now) {
       ? NIGHT_SUN + (1 - NIGHT_SUN) * clamp(L.time / L.dayLength, 0, 1)
       : clamp(L.time / L.dayLength, 0, 1);
     SUN = sunParams(L.sun);
+    // le vent dérive lentement : la rose des vents est vivante
+    const wd = angDiff(L.windFrom, L.windFrom0);
+    if (Math.abs(wd) < 0.31) L.windFrom += L.windDrift * dt;   // borné à ±18°
     if (!L.nightFlashed && L.sun > 0.97) {
       L.nightFlashed = true;
       Game.flash("LA NUIT EST TOMBÉE — ON NAVIGUE À LA CARTE", 4);

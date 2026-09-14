@@ -208,6 +208,23 @@ function paintCoralDetail(gw, gl) {
       gl.strokeStyle = rgba(mixRGB(P.line, P.coralDk, 0.35), 0.62); gl.lineWidth = Math.max(1, T * 0.5);
       gl.beginPath(); gl.arc(x, y, r, 0, TAU); gl.stroke();
     }
+    // étoile de mer sur la patate émergée (détail discret, déterministe)
+    if (hash2(p.x | 0, p.y | 0) > 0.74) {
+      const a = hash2((p.x | 0) * 3, (p.y | 0) * 5) * TAU;
+      const x = cx + Math.cos(a) * R * 0.35, y = cy - Math.sin(a) * R * 0.35;
+      const s = Math.max(1.4, T * 0.85);
+      gl.fillStyle = "rgba(230,110,96,0.95)";
+      gl.strokeStyle = rgba(P.line, 0.7); gl.lineWidth = Math.max(1, T * 0.3);
+      gl.beginPath();
+      for (let k = 0; k < 5; k++) {
+        const t1 = k / 5 * TAU, t2 = (k + 0.5) / 5 * TAU;
+        const x1 = x + Math.cos(t1) * s, y1 = y + Math.sin(t1) * s;
+        const x2 = x + Math.cos(t2) * s * 0.45, y2 = y + Math.sin(t2) * s * 0.45;
+        k ? gl.lineTo(x1, y1) : gl.moveTo(x1, y1);
+        gl.lineTo(x2, y2);
+      }
+      gl.closePath(); gl.fill(); gl.stroke();
+    }
   }
 }
 
@@ -239,6 +256,35 @@ function paintDecor(gl, gs) {
     gl.lineTo(x - R * 1.2, y + R * 0.5); gl.closePath(); gl.fill();
     gl.restore();
     gl.strokeStyle = rgba(P.line, 0.8); gl.lineWidth = LW; trace(gl, 0, 0); gl.stroke();
+  }
+
+  /* crabes sur la plage : discrets, déterministes, près de la ligne de shore */
+  for (let y = L.by0; y < L.by1; y += 11) {
+    if (hash2((y | 0) * 7 + 3, 11) < 0.82) continue;
+    const sx = L.shoreX(y) - 3 - hash2((y | 0), 5) * 6;
+    const x = tX(sx), yy = tY(y), s = Math.max(1.2, T * 0.9);
+    gs.fillStyle = "rgba(10,52,72,0.3)";
+    gs.beginPath(); gs.ellipse(x + T, yy + T * 1.3, s * 1.6, s * 0.7, 0, 0, TAU); gs.fill();
+    gl.fillStyle = "rgba(214,96,72,0.95)";
+    gl.strokeStyle = rgba(P.line, 0.75); gl.lineWidth = Math.max(1, T * 0.3);
+    // carapace
+    gl.beginPath(); gl.ellipse(x, yy, s, s * 0.85, 0, 0, TAU); gl.fill(); gl.stroke();
+    // six pattes en éventail
+    gl.lineWidth = Math.max(1, T * 0.22);
+    gl.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = Math.PI + (k / 5 - 0.5) * 2.4;
+      gl.moveTo(x, yy);
+      gl.lineTo(x + Math.cos(a) * s * 1.5, yy + Math.sin(a) * s * 1.5);
+    }
+    gl.stroke();
+    // deux pinces à l'avant
+    gl.fillStyle = "rgba(214,96,72,0.95)";
+    for (const s2 of [-1, 1]) {
+      gl.beginPath();
+      gl.ellipse(x + s * 0.7, yy + s2 * s * 0.7, s * 0.4, s * 0.3, 0, 0, TAU);
+      gl.fill();
+    }
   }
 
   for (const hut of L.huts) {

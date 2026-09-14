@@ -109,6 +109,32 @@ function drawSparkles(t) {
   }
 }
 
+/* --------------------------- reflet du soleil --------------------------- */
+/* Barre dorée allongée dans l'axe du vent : pas une vraie réflexion
+   optique, juste un clin d'œil visuel qui danse avec la houle. Atténué
+   au crépuscule et éteint la nuit.                                    */
+function drawSunGlare(t) {
+  const s = clamp(L.sun, 0, 1);
+  if (s > 0.78) return;                       // trop tard : nuit
+  const g = (0.78 - s) / 0.78;                // 1 plein jour → 0 tombée
+  const wdx = Math.cos(L.windFrom + Math.PI), wdy = Math.sin(L.windFrom + Math.PI);
+  const cx = sX(cam.x), cy = sY(cam.y);
+  const len = Math.hypot(W, H) * 0.55;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.atan2(wdy, -wdx));          // axe du vent en écran
+  ctx.globalCompositeOperation = "lighter";
+  for (let k = 0; k < 6; k++) {
+    const a = (0.10 + 0.07 * Math.sin(t * 0.9 + k)) * g * (1 - k / 6);
+    if (a <= 0.005) continue;
+    ctx.fillStyle = rgba([255, 244, 214], a);
+    const w = len * (0.5 + k * 0.1), h = (7 + k * 2.4) * (0.6 + 0.4 * Math.sin(t * 1.7 + k));
+    ctx.beginPath(); ctx.ellipse(0, 0, w, h, 0, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+  ctx.globalCompositeOperation = "source-over";
+}
+
 /* ------------------------------ écume ---------------------------------- */
 function foamLine(xf, t, amp, freq, spd, width, alpha) {
   const y0 = cam.y - H / CFG.K * 0.6, y1 = cam.y + H / CFG.K * 0.6;
@@ -1068,6 +1094,7 @@ function drawWorld(t) {
   drawCurrents();
   drawWindRipples(t);
   drawSparkles(t);
+  drawSunGlare(t);
   drawFauna(t);
   blit(TER.shade, 4, 5);
   blit(TER.land, 0, 0);
