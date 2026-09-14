@@ -244,7 +244,10 @@ function updateBoat(dt, t) {
   /* --------------------- barre : il faut de l'erre --------------------- */
   /* À l'écran l'axe y est inversé : un cap qui croît tourne vers la gauche.
      D'où le signe, pour que D = tribord et Q = bâbord.                   */
-  const rudder = clamp(Math.abs(vf) / 0.5, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
+   /* Manoeuvrabilité : pleine au-dessus de 1 kt, ÷2 sous 1 kt, ÷4 sous
+     0,5 kt — un safran a besoin d'eau qui circule pour porter.      */
+  const vm = Math.abs(vf);
+  const rudder = clamp(vm > 0.514 ? 1 : vm > 0.257 ? 0.5 : 0.25, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
   const want = -B.steer * 0.72 * rudder * (vf < -0.2 ? -1 : 1);
   B.yaw += (want - B.yaw) * Math.min(1, h * 3.4);
 
