@@ -328,6 +328,25 @@ const Snd = {
       this.blip(t + 1.08 + i * 0.06, this.deg(k), 0.5, "square", 0.13));
     this.pahu(t + 1.08);
   },
+  /* cri d'oiseau : sifflement bref et modulé, épisodique */
+  sBird() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    const f0 = 1800 + Math.random() * 1400;
+    for (let i = 0; i < 3; i++) {
+      const d = i * 0.07;
+      this.toneAt(t + d, 0.06, "sine", f0 + i * 120, f0 + i * 120 - 200, 0.05 + Math.random() * 0.03);
+      this.toneAt(t + d + 0.03, 0.05, "sine", (f0 + i * 120) * 1.5, (f0 + i * 120) * 1.4, 0.025);
+    }
+  },
+  /* craquement de coque à la gîte : sec, sourd, bois qui fatigue */
+  sCreak() {
+    if (!this.ready) return;
+    const t = this.ctx.currentTime;
+    this.toneAt(t, 0.14, "sawtooth", 220, 90, 0.08);
+    this.noiseAt(t, 0.12, "bandpass", 600, 300, 0.08, 4);
+    this.toneAt(t + 0.04, 0.10, "triangle", 140, 70, 0.05);
+  },
   toggleMute() {
     this.muted = !this.muted;
     if (this.ready) this.master.gain.setTargetAtTime(this.muted ? 0 : 0.85, this.ctx.currentTime, 0.05);

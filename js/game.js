@@ -233,6 +233,9 @@ function frame(now) {
     updateCurrentParticles(dt, L.time);
     updateParts(dt);
     updateBird(dt);
+    updateRain(dt);
+    // cri d'oiseau épisodique (l'ambiance lagon, plus rare au moteur)
+    if (Math.random() < dt * 0.06 && B.engineDead === 0 && Math.abs(B.thr) < 0.3) Snd.sBird();
 
     const running = B.engineOn && B.engineDead === 0 && B.starting <= 0;
     Snd.setEngine(running ? 0.55 + 0.45 * Math.abs(B.thr) : 0, running ? clamp(Math.abs(B.thr), 0, 1) : 0);

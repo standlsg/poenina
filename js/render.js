@@ -1086,6 +1086,55 @@ function drawBird(t) {
   ctx.restore();
 }
 
+/* --------------------------- averses tropicales -------------------------
+   Une bande de pluie traverse le lagon dans l'axe du vent : voile gris,
+   rides accrues, visibilité réduite. Purement cosmétique, pas de danger. */
+let rain = { active: false, y: 0, next: 40, alpha: 0 };
+function updateRain(dt) {
+  // la bande se déplace dans le sens du vent (vers où il souffle)
+  const vy = Math.sin(L.windFrom) * (8 + L.windPow * 0.6);
+  if (!rain.active) {
+    rain.next -= dt;
+    if (rain.next <= 0) {
+      rain.active = true;
+      rain.y = vy > 0 ? L.by0 - 30 : L.by1 + 30;
+      rain.alpha = 0;
+    }
+    return;
+  }
+  rain.y += vy * dt;
+  // fondu entrée/sortie
+  const dyB = Math.abs(rain.y - L.by0), dyE = Math.abs(rain.y - L.by1);
+  const near = Math.min(dyB, dyE);
+  rain.alpha = Math.min(1, rain.alpha + dt * 1.5);
+  if (near < 30) rain.alpha = Math.max(0, near / 30);
+  if (rain.y < L.by0 - 40 || rain.y > L.by1 + 40) {
+    rain.active = false;
+    rain.next = 35 + Math.random() * 45;
+    rain.alpha = 0;
+  }
+}
+function drawRain(t) {
+  if (!rain.active || rain.alpha <= 0.01) return;
+  const py = sY(rain.y), h = H * 0.5, top = py - h / 2;
+  const a = rain.alpha;
+  // voile gris qui assombrit l'eau sous l'averse
+  const g = ctx.createLinearGradient(0, top, 0, top + h);
+  g.addColorStop(0, "rgba(40,52,66,0)");
+  g.addColorStop(0.5, "rgba(40,52,66," + (0.34 * a) + ")");
+  g.addColorStop(1, "rgba(40,52,66,0)");
+  ctx.fillStyle = g; ctx.fillRect(0, top, W, h);
+  // rides de pluie : traits fins dans l'axe du vent
+  ctx.strokeStyle = "rgba(190,212,228," + (0.32 * a) + ")";
+  ctx.lineWidth = 1; ctx.beginPath();
+  const wdx = -Math.cos(L.windFrom), wdy = -Math.sin(L.windFrom) * (W / H);
+  for (let i = 0; i < 70; i++) {
+    const x = (i * 53 + t * 140) % W, y = top + ((i * 37) % h);
+    ctx.moveTo(x, y); ctx.lineTo(x + wdx * 4, y + wdy * 4);
+  }
+  ctx.stroke();
+}
+
 /* --------------------------- image complète ---------------------------- */
 function drawWorld(t) {
   ctx.fillStyle = rgbStr(P.oceanDk); ctx.fillRect(0, 0, W, H);
@@ -1109,6 +1158,7 @@ function drawWorld(t) {
   applyLight();
   drawNavLights();
   drawBird(t);
+  drawRain(t);
   // coup au but : l'écran encaisse
   if (B.hitFlash > 0) {
     ctx.fillStyle = "rgba(255,96,74," + (0.34 * B.hitFlash) + ")";

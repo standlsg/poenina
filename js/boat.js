@@ -46,7 +46,7 @@ function resetBoat() {
   B.heel = 0; B.bob = 0; B.anchoring = 0; B.anchored = false; B.inAnch = false;
   B.alive = true; B.dead = null; B.sinking = 0; B.stuck = 0;
   B.hull = HULL_MAX; B.invuln = 0; B.hitFlash = 0; B.leak = 0;
-  B.clearance = 9; B.scrapeCd = 0; B.warnCd = 0;
+  B.clearance = 9; B.scrapeCd = 0; B.warnCd = 0; B.creakCd = 0;
   L.trail.length = 0;
 }
 
@@ -281,6 +281,12 @@ function updateBoat(dt, t) {
   const speed = Math.hypot(B.vx, B.vy);
   B.bob = 0.1 * Math.sin(t * 1.9 + B.y * 0.05);
   B.heel += ((B.side * sailEff * 0.5) + clamp(B.yaw * vf * 0.35, -0.5, 0.5) - B.heel) * Math.min(1, dt * 2.6);
+  // la coque craque quand la gîte s'accentue franchement
+  B.creakCd = Math.max(0, (B.creakCd || 0) - dt);
+  if (Math.abs(B.heel) > 0.32 && B.creakCd <= 0 && Math.abs(sailEff) > 0.2) {
+    B.creakCd = 1.2 + Math.random() * 1.5;
+    Snd.sCreak();
+  }
 
   /* --------------------------- sillage --------------------------------- */
   if (speed > 0.25) {
