@@ -1055,16 +1055,15 @@ function drawFishers(t) {
         const wave = Math.sin(t * 11) * 0.5; // bras qui s'agitent vite
         ctx.save(); ctx.translate(px, py);
         ctx.globalAlpha = aa;
-        // bouee ronde rayee rouge et blanche (agrandie) : segments verticaux
-        // 1/3 rouge a gauche, blanc au centre, 1/3 rouge a droite.
+        // bouee ronde rayee rouge et blanche : 4 quartiers verticaux
+        // (rouge | blanc | rouge | blanc), sans interstice -> pas de bleu qui passe.
         ctx.save();
         ctx.beginPath(); ctx.ellipse(0, 0, 5.6, 4.7, 0, 0, TAU); ctx.clip();
-        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge gauche
-        ctx.fillRect(-5.6, -4.7, 1.87, 9.4);
-        ctx.fillStyle = "rgb(255,255,255)";             // colonne blanche centrale
-        ctx.fillRect(-1.87, -4.7, 3.74, 9.4);
-        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge droite
-        ctx.fillRect(1.87, -4.7, 3.73, 9.4);
+        const BW = 2.8;   // largeur d'un quartier (5.6 / 4)
+        ctx.fillStyle = "rgb(214,40,40)";   ctx.fillRect(-5.6, -4.7, BW, 9.4);
+        ctx.fillStyle = "rgb(255,255,255)"; ctx.fillRect(-2.8, -4.7, BW, 9.4);
+        ctx.fillStyle = "rgb(214,40,40)";   ctx.fillRect(0.0, -4.7, BW, 9.4);
+        ctx.fillStyle = "rgb(255,255,255)"; ctx.fillRect(2.8, -4.7, BW, 9.4);
         ctx.restore();
         // contour fonce de la bouee
         ctx.strokeStyle = rgba(P.line, 0.85); ctx.lineWidth = 1.4;
