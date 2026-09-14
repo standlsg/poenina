@@ -266,7 +266,7 @@ function updateBoat(dt, t) {
     let target = driftDir + Math.PI / 2;     // travers = perpendiculaire à la dérive
     if (Math.abs(angDiff(target, B.h)) > Math.PI / 2) target += Math.PI;  // côté le plus court
     const diff = angDiff(target, B.h);
-    const rate = 0.5; // rad/s : ~28°/s, ~6 s pour 180°
+    const rate = 0.4; // rad/s : ~23°/s, ~8 s pour 180°
     B.h = (B.h + clamp(diff, -rate * dt, rate * dt)) % TAU;
     B.yaw = 0;                              // la loffe remplace la barre
   } else {
