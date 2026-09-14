@@ -324,7 +324,10 @@ function drawFauna(t) {
     else if (f.kind === "requin") {
       /* requin pointe-noire : museau pointu, fentes branchiales, extrémités
          de nageoires noires — c'est sa signature.                        */
-      const tail = Math.sin(f.ph) * 0.75;
+      /* Battement latéral, correct pour un poisson : la caudale reste dans
+         le plan vertical et balaie de gauche à droite. Amplitude franche,
+         le corps sinue nettement.                                        */
+      const tail = Math.sin(f.ph) * 1.15;
       const body = tn([136, 150, 168]);
       // pectorales derrière le corps
       ctx.fillStyle = tn([120, 134, 152]);
@@ -370,13 +373,13 @@ function drawFauna(t) {
     }
 
     else if (f.kind === "dauphin") {
-      /* dauphin : melon, rostre, cape sombre sur le dos, ventre clair.
-         Mammifère marin : la queue bat vertical, pas latéral. En vue
-         de dessus ça se traduit par un croissant caudal qui se rétrécit
-         et s'étire au rythme du battement (perspective de la queue qui
-         monte et descend), plutôt qu'un décalage latéral de poisson. */
-      const flap = Math.cos(f.ph) * 0.7;                  // 0 = queue vue de face (fine), ±1 = plate (large)
-      const span = 0.25 + 0.7 * Math.abs(flap);            // envergure apparente du croissant
+      /* dauphin : melon, rostre, cape sombre sur le dos, ventre clair */
+      /* Un cétacé bat de la queue de haut en bas, pas latéralement. Vu de
+         dessus, ce battement se lit à l'envergure apparente du croissant
+         caudal : large quand la queue est à plat, fine quand elle monte ou
+         descend et qu'on la voit par la tranche. Deux pulsations par cycle
+         (plat - tranche - plat - tranche), d'où la valeur absolue.       */
+      const fl = 0.95 * (0.3 + 0.7 * Math.abs(Math.cos(f.ph)));   // demi-envergure
       const w = jumping ? 1 : vis;
       const dk = c => jumping ? rgbStr(c) : tn(c);
       ctx.fillStyle = dk([128, 148, 180]);
@@ -387,9 +390,9 @@ function drawFauna(t) {
       ctx.quadraticCurveTo(2.5, 0.16, 2.15, 0.3);
       ctx.bezierCurveTo(1.4, 0.66, 0.2, 0.78, -1.1, 0.58);
       ctx.lineTo(-2.5, 0.2);
-      ctx.quadraticCurveTo(-3.1, flap * 0.3, -3.15, span);        // nageoire caudale
-      ctx.quadraticCurveTo(-2.55, flap * 0.25, -3.15, -span);
-      ctx.quadraticCurveTo(-3.05, flap * 0.3, -2.5, -0.2);
+      ctx.quadraticCurveTo(-3.1, fl * 0.5, -3.15, fl);              // nageoire caudale
+      ctx.quadraticCurveTo(-2.55, 0, -3.15, -fl);
+      ctx.quadraticCurveTo(-3.05, -fl * 0.5, -2.5, -0.2);
       ctx.lineTo(-1.1, -0.58);
       ctx.bezierCurveTo(0.2, -0.78, 1.4, -0.66, 2.15, -0.3);
       ctx.quadraticCurveTo(2.5, -0.16, 3.05, 0);
