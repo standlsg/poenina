@@ -189,6 +189,20 @@ function updateBoat(dt, t) {
     if (B.luff > 0.5 && Math.random() < dt * 9) Snd.sLuff(1);
   } else B.luff = 0;
 
+  } else B.luff = 0;
+
+  /* Face au vent (twa < 55°) la voile ne pousse plus — mais si elle est
+     hissée, le bateau est en train de virer : il garde son erre pour
+     franchir le cone et gonfler l'autre bord. Seul le cas « moteur coupé
+     ET voile affalée » est une vraie ancre flottante (noProp).       */
+  const sailHoisted = B.sailUp > 0.15;
+  const sailEff = (sailHoisted && B.twa >= 55) ? sailF : 0;
+  const hasProp = thrust > 0.01 || sailEff > 0.01;
+  const intoWind = sailHoisted && B.twa < 55;       // virement : voile hissée face au vent
+  const noProp = !hasProp && !intoWind;             // moteur coupé ET voile affalée = ancre flottante
+
+
+   
   /* Face au vent (twa < 55°) la voile ne pousse plus : c'est comme si le
      bateau n'avait pas de propulsion. On ne retient donc de la force
      vélique que hors du cone d'interdiction.                          */
@@ -214,7 +228,9 @@ function updateBoat(dt, t) {
   /* ---------------------------- forces --------------------------------- */
   let ax = fwx * (thrust + sailEff), ay = fwy * (thrust + sailEff);
   const vf = B.vx * fwx + B.vy * fwy, vl = -B.vx * fwy + B.vy * fwx;
-  const df = -0.068 * vf * Math.abs(vf) - 0.10 * vf;
+   const dragF = intoWind ? 2 : 1;                   
+// face au vent : élan perdu 2× plus vite (mais on garde l'erre)
+  const df = -0.068 * vf * Math.abs(vf) * dragF - 0.10 * vf * dragF;
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
 
@@ -238,7 +254,7 @@ function updateBoat(dt, t) {
  /* Sans propulsion et presque à l'arrêt : le bateau présente son flanc à
      la dérive (ancre flottante). Il loffe travers à la dérive combinée
      vent+courant à vitesse fixe (~1 rad/s → 180° en ~3 s).         */
-  if (!hasProp && Math.hypot(B.vx, B.vy) < 0.3) {
+ if (noProp && Math.hypot(B.vx, B.vy) < 0.3) {
     const driftDir = Math.atan2(B.ly + B.cy, B.lx + B.cx);
     let target = driftDir + Math.PI / 2;     // travers = perpendiculaire à la dérive
     if (Math.abs(angDiff(target, B.h)) > Math.PI / 2) target += Math.PI;  // côté le plus court
