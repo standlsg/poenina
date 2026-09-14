@@ -322,6 +322,23 @@ function buildLevel(n, seedExtra) {
     L.fauna.push(makeFauna(kinds[(rng() * kinds.length) | 0], sx + 14 + rng() * (rx - sx - 28), y, rng));
   }
 
+  /* ---- pêcheurs : barques locales qui errent dans le lagon ----
+     Niveaux 3 à 5 seulement (le 6 est nocturne : ils sont rentrés).
+     Une barque tous les ~100 m, jamais au démarrage ni à l'arrivée.   */
+  L.fishers = [];
+  if (n >= 3 && n < CFG.MAXLEVEL) {
+    for (let y = 70; y < S.len - 70; y += 100 + rng() * 22) {
+      const sx = L.shoreX(y), rx = L.reefX(y);
+      const cx = sx + (rx - sx) * (0.30 + rng() * 0.40);
+      const mode = rng() < 0.5 ? "circle" : "pendulum";
+      L.fishers.push({
+        bx: cx, by: y, x: cx, y: y, h: rng() * TAU, ph: rng() * TAU,
+        mode, amp: 7 + rng() * 6, spd: 0.16 + rng() * 0.08, h0: rng() * TAU,
+        sunken: 0, drifted: false, dx: 0, dy: 0, beached: false
+      });
+    }
+  }
+
   L.time = 0;
   L.sun = L.night ? NIGHT_SUN : 0;      // le dernier niveau démarre de nuit
   L.nightFlashed = L.night;

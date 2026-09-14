@@ -1025,6 +1025,93 @@ function updateBird(dt) {
     bird.next = 12 + Math.random() * 22;
   }
 }
+/* ====================== pêcheurs : barques locales ====================== */
+/* Petite pirogue de pêche locale qui erre dans le lagon (niveaux 3-5).
+   Au choc elle coule : animation de naufrage, puis le pêcheur dérive sur
+   une bouée orange (même dérive que le catamaran). La nuit, les barques
+   rentrent au rivage et s'échouent.                                  */
+function drawFishers(t) {
+  if (!L.fishers) return;
+  for (const f of L.fishers) {
+    if (!onScreen(f.x, f.y, 60)) continue;
+    const px = sX(f.x), py = sY(f.y);
+    if (f.sunken > 0) {
+      // trou sombre + anneaux qui s'écartent pendant la barque s'enfonce
+      const sk = f.sunken;
+      ctx.fillStyle = rgba(P.oceanDk, 0.4 * Math.min(1, sk * 2.5));
+      ctx.beginPath(); ctx.ellipse(px, py, 16 - sk * 4, 12 - sk * 3, 0, 0, TAU); ctx.fill();
+      for (let k = 0; k < 3; k++) {
+        const u = (sk * 1.6 + k * 0.34) % 1;
+        ctx.strokeStyle = rgba(P.foam, 0.42 * (1 - u) * (1 - sk * 0.4));
+        ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.ellipse(px, py, 8 + u * 26, (8 + u * 26) * 0.78, 0, 0, TAU); ctx.stroke();
+      }
+      // la barque s'enfonce, penche et s'efface
+      if (sk < 0.95) {
+        ctx.save(); ctx.translate(px, py); ctx.rotate(-f.h + sk * 0.5);
+        ctx.scale(CFG.K * (1 - sk * 0.42), CFG.K * (1 - sk * 0.42));
+        ctx.globalAlpha = 1 - sk * 0.85;
+        ctx.fillStyle = "rgba(120,82,52,0.95)";
+        ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(2.2, 0); ctx.quadraticCurveTo(1.4, 0.9, -1.0, 0.95);
+        ctx.quadraticCurveTo(-2.0, 0.9, -2.2, 0); ctx.quadraticCurveTo(-2.0, -0.9, -1.0, -0.95);
+        ctx.quadraticCurveTo(1.4, -0.9, 2.2, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore();
+      }
+      // une fois la barque disparue : le pêcheur flotte sur sa bouée orange
+      if (sk > 0.6) {
+        const a = (sk - 0.6) / 0.4;
+        ctx.save(); ctx.translate(px, py);
+        // bouée orange
+        ctx.fillStyle = rgba(P.buoy, 0.95);
+        ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(0, 0, 2.6, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        ctx.beginPath(); ctx.arc(-0.9, -0.9, 0.8, 0, TAU); ctx.fill();
+        // petit pêcheur accroché
+        ctx.fillStyle = "rgba(60,40,30,0.9)";
+        ctx.beginPath(); ctx.arc(0, -2.6, 1.1, 0, TAU); ctx.fill();
+        ctx.strokeStyle = "rgba(60,40,30,0.8)"; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.moveTo(0, -1.8); ctx.lineTo(0, -0.4); ctx.stroke();
+        ctx.restore();
+      }
+      continue;
+    }
+    // ombre portée légère
+    ctx.save(); ctx.translate(px + 2, py + 3); ctx.rotate(-f.h); ctx.scale(CFG.K, CFG.K);
+    ctx.fillStyle = rgba(P.line, 0.16);
+    ctx.beginPath(); ctx.ellipse(0, 0, 2.4, 1.0, 0, 0, TAU); ctx.fill();
+    ctx.restore();
+    // barque de pêche : pirogue effilée, bois clair, liseré foncé
+    ctx.save();
+    ctx.translate(px, py); ctx.rotate(-f.h); ctx.scale(CFG.K, CFG.K);
+    ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.18;
+    ctx.fillStyle = "rgba(150,104,66,0.95)";
+    ctx.beginPath();
+    ctx.moveTo(2.4, 0);
+    ctx.quadraticCurveTo(1.6, 0.95, -1.0, 0.98);
+    ctx.quadraticCurveTo(-2.1, 0.9, -2.4, 0);
+    ctx.quadraticCurveTo(-2.1, -0.9, -1.0, -0.98);
+    ctx.quadraticCurveTo(1.6, -0.95, 2.4, 0);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // pont plus clair
+    ctx.fillStyle = "rgba(186,140,96,0.9)";
+    ctx.beginPath(); ctx.ellipse(0, 0, 1.7, 0.7, 0, 0, TAU); ctx.fill();
+    // petit mât de poupée + voilure de fortune (triangle)
+    ctx.strokeStyle = "rgba(80,60,44,0.9)"; ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.moveTo(-0.2, 0); ctx.lineTo(-0.2, -1.6); ctx.stroke();
+    ctx.fillStyle = "rgba(236,224,196,0.9)";
+    ctx.beginPath(); ctx.moveTo(-0.2, -1.6); ctx.lineTo(1.4, 0.1); ctx.lineTo(-0.2, 0.1); ctx.closePath(); ctx.fill();
+    ctx.stroke();
+    // le pêcheur : petite silhouette sombre au centre
+    ctx.fillStyle = "rgba(50,38,30,0.95)";
+    ctx.beginPath(); ctx.arc(0.4, 0, 0.55, 0, TAU); ctx.fill();
+    ctx.fillStyle = "rgba(200,170,120,0.95)";
+    ctx.beginPath(); ctx.arc(0.4, -0.15, 0.34, 0, TAU); ctx.fill();
+    ctx.restore();
+  }
+}
+
 function drawBird(t) {
   if (!bird.active) return;
   // Un oiseau bat des ailes de haut en bas. Vu de dessus, ce battement
@@ -1193,6 +1280,7 @@ function drawWorld(t) {
   drawSinkEffect(t);
   drawBoat(t);
   drawParts();
+  drawFishers(t);
   applyLight();
   drawNavLights();
   drawBird(t);

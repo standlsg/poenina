@@ -128,3 +128,49 @@ function updateParts(dt) {
     else { p.vx *= 0.95; p.vy *= 0.95; p.a += p.va * dt; }
   }
 }
+
+/* ====================== pêcheurs : barques locales ====================== */
+function updateFishers(dt, t) {
+  if (!L.fishers) return;
+  dt *= CFG.VIS;
+  const nt = nightAmount();
+  for (const f of L.fishers) {
+    if (f.sunken > 0) {
+      // la barque coule : le pêcheur dérive sur sa bouée orange.
+      f.sunken = Math.min(1, f.sunken + dt * 0.5);
+      if (f.sunken >= 1 && !f.drifted) f.drifted = true;
+      // dérive = courant + dérive vent, comme le catamaran sans erre
+      const c = currentAt(f.x, f.y, t);
+      const wx = Math.cos(L.windFrom), wy = Math.sin(L.windFrom);
+      const lee = 0.40 * (L.windPow / 12);
+      f.x += (c[0] - wx * lee) * dt;
+      f.y += (c[1] - wy * lee) * dt;
+      continue;
+    }
+    // la nuit tombe : les pêcheurs rentrent au rivage et s'échouent
+    if (nt > 0.45 && !f.beached) {
+      const sx = L.shoreX(f.y);
+      const tx = sx + 6;                       // juste au ras du rivage
+      const dx = tx - f.x;
+      if (Math.abs(dx) < 1.2) { f.beached = true; f.x = tx; }
+      else { f.h = dx > 0 ? 0 : Math.PI; f.x += Math.sign(dx) * 1.4 * dt; f.y += 0; }
+      continue;
+    }
+    f.ph += dt * f.spd;
+    if (f.mode === "circle") {
+      // tourne autour de son point d'ancrage : cap = tangente au cercle
+      f.h = (f.ph * 1.0) % TAU;
+      f.x = f.bx + Math.cos(f.ph) * f.amp;
+      f.y = f.by + Math.sin(f.ph) * f.amp * 0.7;
+    } else {
+      // pendule : va-et-vient le long d'un axe, cap dans le sens du déplacement
+      const s = Math.sin(f.ph);
+      f.x = f.bx + Math.cos(f.h0 || 0) * s * f.amp;
+      f.y = f.by + Math.sin(f.h0 || 0) * s * f.amp;
+      f.h = s > 0 ? (f.h0 || 0) : (f.h0 || 0) + Math.PI;
+    }
+    // garde la barque dans le chenal : jamais sur la plage ni le récif
+    const sx = L.shoreX(f.y), rx = L.reefX(f.y);
+    f.x = clamp(f.x, sx + 10, rx - 10);
+  }
+}

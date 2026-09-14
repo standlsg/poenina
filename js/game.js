@@ -60,7 +60,7 @@ const Game = {
     for (let i = 0; i < 12; i++) spawnSpray(B.x, B.y, 2.4);
     for (let i = 0; i < 3; i++) spawnDebris(B.x, B.y);
     spawnRipple(B.x, B.y, 1.5);
-    const what = cause === "patate" ? "PATATE" : cause === "barriere" ? "BARRIÈRE" : "ÉCHOUAGE";
+    const what = cause === "patate" ? "PATATE" : cause === "barriere" ? "BARRIÈRE" : cause === "barque" ? "BARQUE" : "ÉCHOUAGE";
     this.flash(what + " ! COQUE ENDOMMAGÉE — " + left +
       (left > 1 ? " CHANCES RESTANTES" : " DERNIÈRE CHANCE"), 3);
     setTimeout(() => Snd.sBeep(false), 260);
@@ -230,6 +230,23 @@ function frame(now) {
 
     updateBoat(dt, L.time);
     updateFauna(dt, L.time);
+    updateFishers(dt, L.time);
+    // collision avec les barques de pêche : coûte une coque, la barque coule
+    if (L.fishers && B.alive && B.invuln <= 0) {
+      for (const f of L.fishers) {
+        if (f.sunken > 0) continue;
+        if (Math.hypot(B.x - f.x, B.y - f.y) < 3.0) {
+          f.sunken = 0.001;
+          B.hull--;
+          if (B.hull <= 0) { Game.die("barque"); break; }
+          B.invuln = 1.9; B.hitFlash = 1;
+          Game.impact("barque", B.hull);
+          for (let i = 0; i < 8; i++) spawnSpray(f.x, f.y, 1.6);
+          spawnRipple(f.x, f.y, 1.2);
+          break;
+        }
+      }
+    }
     updateCurrentParticles(dt, L.time);
     updateParts(dt);
     updateBird(dt);
@@ -279,6 +296,7 @@ function frame(now) {
   else if (st === "dead") {
     Game.deadT += dt;
     updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
+    updateFishers(dt, L.time);
     updateCurrentParticles(dt, L.time);
     updateBird(dt);
     // bulles et remous pendant que le bateau s'enfonce
@@ -291,10 +309,11 @@ function frame(now) {
   else if (st === "win") {
     Game.winT += dt;
     updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
+    updateFishers(dt, L.time);
     updateCurrentParticles(dt, L.time);
     updateBird(dt);
   }
-  else if (st === "brief") updateFauna(dt, 0);
+  else if (st === "brief") { updateFauna(dt, 0); updateFishers(dt, 0); }
 
   /* ------------------------------ caméra ------------------------------ */
   if (st === "play" || st === "dead" || st === "win" || st === "pause" || st === "brief") {
