@@ -337,6 +337,9 @@ function drawFauna(t) {
       // pectorales, en faux, derrière le corps
       ctx.fillStyle = tn([126, 133, 137]);
       for (const s of [1, -1]) { leaf(ctx, 0.8, s * 0.4, -0.5, s * 1.5, 0.17); ctx.fill(); ctx.stroke(); }
+      // pelviennes : petites nageoires au tiers arrière du corps
+      ctx.fillStyle = tn([130, 137, 141]);
+      for (const s of [1, -1]) { leaf(ctx, -0.6, s * 0.3, -1.5, s * 0.4, 0.11); ctx.fill(); ctx.stroke(); }
       // lame caudale, dessinée avant le corps : le raccord passe dessous
       ctx.beginPath();
       ctx.moveTo(-1.8, 0.24);
@@ -346,12 +349,13 @@ function drawFauna(t) {
       // corps
       ctx.fillStyle = body;
       ctx.beginPath();
-      ctx.moveTo(3.15, 0);                                 // museau pointu
-      ctx.bezierCurveTo(2.45, 0.28, 1.5, 0.5, 0.4, 0.5);
+      ctx.moveTo(2.75, 0.16);
+      ctx.bezierCurveTo(2.3, 0.32, 1.5, 0.5, 0.4, 0.5);
       ctx.bezierCurveTo(-0.7, 0.48, -1.5, 0.3, -2.0, 0.15);
-      ctx.quadraticCurveTo(-2.22, 0, -2.0, -0.15);         // pédoncule étroit
+      ctx.quadraticCurveTo(-2.22, 0, -2.0, -0.15);         // pédicule étroit
       ctx.bezierCurveTo(-1.5, -0.3, -0.7, -0.48, 0.4, -0.5);
-      ctx.bezierCurveTo(1.5, -0.5, 2.45, -0.28, 3.15, 0);
+      ctx.bezierCurveTo(1.5, -0.5, 2.3, -0.32, 2.75, -0.16);
+      ctx.quadraticCurveTo(2.95, 0, 2.75, 0.16);            // museau arrondi
       ctx.closePath(); ctx.fill(); ctx.stroke();
       // flanc plus clair
       ctx.save();
