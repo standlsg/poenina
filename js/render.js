@@ -381,7 +381,7 @@ function drawFauna(t) {
          caudal : large quand la queue est à plat, fine quand elle monte ou
          descend et qu'on la voit par la tranche. Deux pulsations par cycle
          (plat - tranche - plat - tranche), d'où la valeur absolue.       */
-      const fl = 0.95 * (0.3 + 0.7 * Math.abs(Math.cos(f.ph)));   // demi-envergure
+      const fl = 1.55 * (0.15 + 0.85 * Math.abs(Math.cos(f.ph))); // demi-envergure : 0,23 (tranche) → 1,55 (plat)
       const w = jumping ? 1 : vis;
       const dk = c => jumping ? rgbStr(c) : tn(c);
       ctx.fillStyle = dk([128, 148, 180]);
