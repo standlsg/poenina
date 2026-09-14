@@ -189,8 +189,6 @@ function updateBoat(dt, t) {
     if (B.luff > 0.5 && Math.random() < dt * 9) Snd.sLuff(1);
   } else B.luff = 0;
 
-  } else B.luff = 0;
-
   /* Face au vent (twa < 55°) la voile ne pousse plus — mais si elle est
      hissée, le bateau est en train de virer : il garde son erre pour
      franchir le cone et gonfler l'autre bord. Seul le cas « moteur coupé
