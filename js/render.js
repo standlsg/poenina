@@ -338,8 +338,10 @@ function drawFauna(t) {
       ctx.moveTo(2.9, 0);
       ctx.bezierCurveTo(2.3, 0.42, 1.2, 0.72, 0.1, 0.7);
       ctx.bezierCurveTo(-0.9, 0.66, -1.6, 0.44, -2.05, 0.26);
-      ctx.lineTo(-2.9, tail + 1.25);                       // caudale en croissant
-      ctx.quadraticCurveTo(-2.35, tail * 0.85, -2.75, tail - 0.9);
+           ctx.lineTo(-2.7, tail * 0.15);                     // pedicule etroit
+      ctx.quadraticCurveTo(-2.95, tail * 0.5, -3.45, tail + 0.42);  // caudale verticale, etroite
+      ctx.quadraticCurveTo(-2.75, tail * 0.2, -3.25, tail - 0.42);
+      ctx.quadraticCurveTo(-2.9, -tail * 0.5, -2.7, -tail * 0.15);
       ctx.lineTo(-2.05, -0.26);
       ctx.bezierCurveTo(-1.6, -0.44, -0.9, -0.66, 0.1, -0.7);
       ctx.bezierCurveTo(1.2, -0.72, 2.3, -0.42, 2.9, 0);
