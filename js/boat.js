@@ -308,12 +308,14 @@ function updateBoat(dt, t) {
   // le tirant d'eau, pour coller a la taille visible des patates.
   const hitD = hp.k === K_CORAL ? CFG.PATATE : CFG.DRAFT;
   // en plus du sondage de profondeur (8 points, qui peut passer entre deux
-  // patates), on verifie le chevauchement reel de la coque (OBB) avec les
-  // patates de corail proches : toute la masse orange visible est fatale au
-  // contact (rayon visuel shapeR ~ r*0.86, demi-largeur coque complete).
+  // patates), on verifie le chevauchement de la coque (OBB) avec le coeur des
+  // patates de corail proches. On n'utilise pas toute la masse orange visible
+  // (trop punitif) mais le coeur (0.72 x le rayon visuel), et seulement le
+  // tiers central de la largeur de la coque (HW ~ 1.7 m) : il faut vraiment
+  // bien centrer le cata sur la patate pour heurter.
   let patateHit = false;
   if (B.invuln <= 0) {
-    const HL = 5.1, HW = 2.85;          // demi-longueur / demi-largeur coque
+    const HL = 5.1, HW = 1.7;           // demi-longueur / tiers central de la demi-largeur
     const ch = Math.cos(B.h), sh = Math.sin(B.h);
     // on sonde 3 tranches y adjacentes (patate a cheval sur une frontiere de bande)
     for (let bj = -1; bj <= 1 && !patateHit; bj++) {
@@ -325,9 +327,9 @@ function updateBoat(dt, t) {
         const lx = dx * ch + dy * sh;   // repere bateau : avant (+x)
         const ly = -dx * sh + dy * ch;  //                tribord (+y)
         const cx = clamp(lx, -HL, HL), cy = clamp(ly, -HW, HW);
-        // rayon de la masse orange le long de la direction bateau->patate
-        const visR = shapeR(p, dx, dy);
-        if (Math.hypot(lx - cx, ly - cy) < visR) { patateHit = true; break; }
+        // coeur de la patate (0.72 x le rayon visuel), pas toute la masse orange
+        const hitR = shapeR(p, dx, dy) * 0.72;
+        if (Math.hypot(lx - cx, ly - cy) < hitR) { patateHit = true; break; }
       }
     }
   }
