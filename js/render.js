@@ -892,6 +892,11 @@ function drawParts() {
     } else if (p.kind === 1) {
       ctx.strokeStyle = rgba(P.foam, 0.5 * a); ctx.lineWidth = 1.4;
       ctx.beginPath(); ctx.arc(px, py, p.r * CFG.K, 0, TAU); ctx.stroke();
+    } else if (p.kind === 3) {
+      // fumée noire : ronde, gonfle et se dilue en s'estompant
+      const r = p.r * CFG.K;
+      ctx.fillStyle = rgba(P.line, 0.55 * a);
+      ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fill();
     } else {
       ctx.save(); ctx.translate(px, py); ctx.rotate(p.a);
       ctx.fillStyle = rgba(P.hull, 0.9 * a);
