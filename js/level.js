@@ -7,7 +7,7 @@ const K_WATER = 0, K_CORAL = 1, K_REEF = 2, K_SAND = 3, K_DRY = 4, K_VEG = 5, K_
 const L = {};
 
 function levelSpec(n) {
-  const len = 238 + 74 * (n - 1);          // 30 % plus court qu'au départ
+  const len = 238 + 37 * (n - 1);          // +~15 % par palier (moitié moins raide)
   const width = 138 - 11 * (n - 1);
   return {
     n, len, width,
