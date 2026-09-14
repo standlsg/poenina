@@ -93,6 +93,24 @@ function spawnSmoke(x, y, vx, vy) {
     t: 0, r: 0.28 + Math.random() * 0.18, kind: 3
   });
 }
+/* fumée grise du moteur qui tousse : plus claire et plus courte que la
+   fumée noire de panne franche. Annonce la panne.                      */
+function spawnHaze(x, y, vx, vy) {
+  if (parts.length > PARTS_MAX) return;
+  parts.push({
+    x, y, vx, vy, life: 0.6 + Math.random() * 0.35,
+    t: 0, r: 0.22 + Math.random() * 0.14, kind: 5
+  });
+}
+/* étincelle de surchauffe : point chaud orange-jaune qui jaillit du capot
+   et s'éteint vite.                                                    */
+function spawnSpark(x, y, vx, vy) {
+  if (parts.length > PARTS_MAX) return;
+  parts.push({
+    x, y, vx, vy, life: 0.28 + Math.random() * 0.18,
+    t: 0, r: 0.12 + Math.random() * 0.08, kind: 4
+  });
+}
 function updateParts(dt) {
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i]; p.t += dt;
@@ -101,6 +119,8 @@ function updateParts(dt) {
     if (p.kind === 0) { p.vx *= 0.92; p.vy *= 0.92; p.r += dt * 0.5; }
     else if (p.kind === 1) p.r += dt * 4.5;
     else if (p.kind === 3) { p.vx *= 0.94; p.vy *= 0.94; p.r += dt * 0.9; }
+    else if (p.kind === 4) { p.vx *= 0.90; p.vy *= 0.90; }
+    else if (p.kind === 5) { p.vx *= 0.93; p.vy *= 0.93; p.r += dt * 0.6; }
     else { p.vx *= 0.95; p.vy *= 0.95; p.a += p.va * dt; }
   }
 }

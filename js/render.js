@@ -473,6 +473,18 @@ function drawWake() {
       ctx.beginPath(); ctx.arc(sX(x), sY(y), (1.6 + 2.6 * u) * CFG.K / 4.2, 0, TAU); ctx.fill();
     }
   }
+  // ondulations légères autour du bateau à l'arrêt : l'eau vit même sans erre
+  if (sp <= 0.25 && B.alive && !B.anchored) {
+    const t = Snd.__t, c = Math.cos(B.h), sn = Math.sin(B.h);
+    for (let k = 0; k < 2; k++) {
+      const ph = (t * 0.5 + k * 0.5) % 1;
+      if (ph > 0.85) continue;
+      const R = (3.5 + ph * 5) * CFG.K;
+      ctx.strokeStyle = rgba(P.foam, 0.22 * (1 - ph / 0.85));
+      ctx.lineWidth = 1.1;
+      ctx.beginPath(); ctx.ellipse(sX(B.x), sY(B.y), R, R * 0.78, 0, 0, TAU); ctx.stroke();
+    }
+  }
 }
 
 /* ---------------------------- le catamaran ----------------------------- */
@@ -897,6 +909,14 @@ function drawParts() {
       const r = p.r * CFG.K;
       ctx.fillStyle = rgba(P.line, 0.55 * a);
       ctx.beginPath(); ctx.arc(px, py, r, 0, TAU); ctx.fill();
+    } else if (p.kind === 4) {
+      // étincelle de surchauffe : point chaud orange-jaune
+      ctx.fillStyle = rgba([255, 200, 90], 0.95 * a);
+      ctx.beginPath(); ctx.arc(px, py, p.r * CFG.K, 0, TAU); ctx.fill();
+    } else if (p.kind === 5) {
+      // fumée grise de toussement : plus claire que la fumée noire
+      ctx.fillStyle = rgba([150, 150, 158], 0.4 * a);
+      ctx.beginPath(); ctx.arc(px, py, p.r * CFG.K, 0, TAU); ctx.fill();
     } else {
       ctx.save(); ctx.translate(px, py); ctx.rotate(p.a);
       ctx.fillStyle = rgba(P.hull, 0.9 * a);
@@ -979,6 +999,67 @@ function drawNavLights() {
   ctx.restore();
 }
 
+/* ----------------------------- oiseau en survol ------------------------
+   Une frégate traverse le ciel de temps en temps : décor pur, aucune
+   interaction. Elle vole au-dessus de tout, donc dessinée en dernier.  */
+let bird = { active: false, x: 0, y: 0, vx: 0, sc: 1, ph: 0, next: 8 };
+function updateBird(dt) {
+  if (!bird.active) {
+    bird.next -= dt;
+    if (bird.next <= 0) {
+      bird.active = true;
+      const fromLeft = Math.random() < 0.5;
+      bird.x = fromLeft ? -40 : W + 40;
+      bird.vx = (fromLeft ? 1 : -1) * (60 + Math.random() * 40);
+      bird.y = 30 + Math.random() * (H * 0.32);
+      bird.sc = 0.8 + Math.random() * 0.5;
+      bird.ph = 0;
+    }
+    return;
+  }
+  bird.x += bird.vx * dt;
+  bird.ph += dt * 6;
+  if (bird.x < -60 || bird.x > W + 60) {
+    bird.active = false;
+    bird.next = 12 + Math.random() * 22;
+  }
+}
+function drawBird(t) {
+  if (!bird.active) return;
+  const flap = Math.sin(bird.ph);
+  const dir = bird.vx > 0 ? 1 : -1;
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  ctx.scale(dir * bird.sc, bird.sc);
+  // ombre portée lointaine sur l'eau
+  ctx.fillStyle = "rgba(14,43,58,0.12)";
+  ctx.beginPath(); ctx.ellipse(0, 9 / bird.sc, 10, 3, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(10,30,42,0.85)"; ctx.lineWidth = 1.4;
+  // corps
+  ctx.fillStyle = "rgba(28,40,52,0.92)";
+  ctx.beginPath(); ctx.ellipse(0, 0, 7, 1.8, 0, 0, TAU); ctx.fill();
+  ctx.stroke();
+  // tête + bec
+  ctx.beginPath();
+  ctx.moveTo(6, -0.4); ctx.lineTo(10, 0.2); ctx.lineTo(6, 0.6); ctx.closePath(); ctx.fill();
+  // ailes en W qui battent
+  const wy = flap * 4;
+  ctx.beginPath();
+  ctx.moveTo(-1, 0);
+  ctx.quadraticCurveTo(-6, -1 - wy, -11, 0.5 - wy * 0.4);
+  ctx.quadraticCurveTo(-6, 0.5, -1, 0);
+  ctx.moveTo(-1, 0);
+  ctx.quadraticCurveTo(4, -1 - wy, 9, 0.5 - wy * 0.4);
+  ctx.quadraticCurveTo(4, 0.5, -1, 0);
+  ctx.fillStyle = "rgba(28,40,52,0.88)"; ctx.fill();
+  ctx.stroke();
+  // queue fourchue
+  ctx.beginPath();
+  ctx.moveTo(-6, 0); ctx.lineTo(-12, -1.4); ctx.lineTo(-12, 1.4); ctx.closePath(); ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
 /* --------------------------- image complète ---------------------------- */
 function drawWorld(t) {
   ctx.fillStyle = rgbStr(P.oceanDk); ctx.fillRect(0, 0, W, H);
@@ -1000,6 +1081,7 @@ function drawWorld(t) {
   drawParts();
   applyLight();
   drawNavLights();
+  drawBird(t);
   // coup au but : l'écran encaisse
   if (B.hitFlash > 0) {
     ctx.fillStyle = "rgba(255,96,74," + (0.34 * B.hitFlash) + ")";

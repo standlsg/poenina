@@ -102,8 +102,8 @@ const Game = {
   },
   confirm() {                       // touche ESPACE selon l'état
     switch (this.state) {
-      // on repart toujours du début : le record n'est qu'un souvenir
-      case "title": Snd.init(); this.seedBump = 0; this.goLevel(1); break;
+      // on reprend au niveau débloqué : la progression est conservée
+      case "title": Snd.init(); this.seedBump = 0; this.goLevel(this.best); break;
       case "brief": this.play(); break;
       case "play":
         B.sail = !B.sail;
@@ -113,7 +113,7 @@ const Game = {
       case "pause": this.togglePause(); break;
       case "dead": this.retry(); break;
       case "win": this.next(); break;
-      case "done": this.seedBump = 0; this.goLevel(1); break;
+      case "done": this.seedBump = 0; this.goLevel(this.best); break;
     }
   },
 
@@ -127,6 +127,11 @@ const Game = {
   newGame() {
     this.seedBump = 0;
     this.goLevel(1);
+  },
+  // repartir du niveau débloqué (depuis le titre ou la fin de partie)
+  resumeGame() {
+    this.seedBump = 0;
+    this.goLevel(this.best);
   },
   toggleEngine() {
     if (this.state !== "play" || !B.alive) return;
@@ -179,7 +184,7 @@ function onKey(e, down) {
   if (e.code === "Space" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); Game.confirm(); }
   if (k === "r" && (Game.state === "play" || Game.state === "dead" || Game.state === "pause")) Game.retry();
   if (k === "p" || e.code === "Escape" || e.key === "Escape") { e.preventDefault(); Game.togglePause(); }
-  if (k === "n" && Game.state === "pause") Game.newGame();
+  if (k === "n" && (Game.state === "pause" || Game.state === "title" || Game.state === "done")) Game.newGame();
   if (e.code === "KeyE" || k === "e") Game.toggleEngine();
   if (k === "m") Game.flash(Snd.toggleMute() ? "SON COUPÉ" : "SON ACTIVÉ", 1.2);
 }
@@ -224,6 +229,7 @@ function frame(now) {
     updateFauna(dt, L.time);
     updateCurrentParticles(dt, L.time);
     updateParts(dt);
+    updateBird(dt);
 
     const running = B.engineOn && B.engineDead === 0 && B.starting <= 0;
     Snd.setEngine(running ? 0.55 + 0.45 * Math.abs(B.thr) : 0, running ? clamp(Math.abs(B.thr), 0, 1) : 0);
@@ -234,6 +240,24 @@ function frame(now) {
     if (B.temp > 0.86 && Math.random() < dt * 7) {
       const c = Math.cos(B.h), s2 = Math.sin(B.h);
       spawnSpray(B.x - 4.2 * c, B.y - 4.2 * s2, 0.5);
+    }
+    // étincelles jaillissent du capot en surchauffe sévère
+    if (B.temp > 0.88 && B.alive && Math.random() < dt * 22) {
+      const c = Math.cos(B.h), s2 = Math.sin(B.h);
+      const ox = B.x - 4.2 * c - 0.5 * s2, oy = B.y - 4.2 * s2 + 0.5 * c;
+      for (let i = 0; i < 3; i++) {
+        const a = Math.random() * TAU;
+        const sp = 0.8 + Math.random() * 1.4;
+        spawnSpark(ox, oy, -c * 0.3 + Math.cos(a) * sp, -s2 * 0.3 + Math.sin(a) * sp);
+      }
+    }
+    // fumée grise pendant le toussement : annonce la panne
+    if (B.sputter > 0 && B.alive && Math.random() < dt * 10) {
+      const c = Math.cos(B.h), s2 = Math.sin(B.h);
+      const ox = B.x - 4.2 * c - 0.5 * s2, oy = B.y - 4.2 * s2 + 0.5 * c;
+      const vx = -c * 0.5 + B.cx * 0.5 + (Math.random() - 0.5) * 0.3;
+      const vy = -s2 * 0.5 + B.cy * 0.5 + (Math.random() - 0.5) * 0.3;
+      spawnHaze(ox, oy, vx, vy);
     }
     // fumée noire à l'échappement quand le moteur est en panne : il tousse
     if (B.engineDead > 0 && B.alive && Math.random() < dt * 14) {
@@ -250,6 +274,7 @@ function frame(now) {
     Game.deadT += dt;
     updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
     updateCurrentParticles(dt, L.time);
+    updateBird(dt);
     // bulles et remous pendant que le bateau s'enfonce
     if (B.dead !== "sable" && B.dead !== "nuit") {
       if (B.sinking < 0.95 && Math.random() < dt * 22) spawnRipple(B.x + (Math.random() - 0.5) * 8, B.y + (Math.random() - 0.5) * 8, 0.25);
@@ -261,6 +286,7 @@ function frame(now) {
     Game.winT += dt;
     updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
     updateCurrentParticles(dt, L.time);
+    updateBird(dt);
   }
   else if (st === "brief") updateFauna(dt, 0);
 

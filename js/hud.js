@@ -577,9 +577,12 @@ function titleScreen(t) {
 
   const bl = 0.55 + 0.45 * Math.sin(t * 3.4);
   const py = Math.max(H * 0.68, byp + bhp + 26);
-  txt("APPUIE SUR  ESPACE", cxx, py, 13, "rgba(255,250,220," + bl + ")", "center");
-  if (Game.best > 1)
-    txt("meilleur niveau atteint : " + Game.best, cxx, py + 15, 8, "rgba(255,255,255,0.7)", "center");
+  if (Game.best > 1) {
+    txt("ESPACE  reprendre au niveau " + Game.best, cxx, py, 12, "rgba(255,250,220," + bl + ")", "center");
+    txt("N  nouvelle partie (depuis le niveau 1)", cxx, py + 15, 8, "rgba(255,255,255,0.7)", "center");
+  } else {
+    txt("APPUIE SUR  ESPACE", cxx, py, 13, "rgba(255,250,220," + bl + ")", "center");
+  }
 }
 
 const LEVEL_NAMES = ["Le lagon d'Avatoru", "La passe de Tiputa", "Les patates de Rangiroa",
