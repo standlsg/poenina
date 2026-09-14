@@ -219,8 +219,6 @@ function updateBoat(dt, t) {
   /* ---------------------------- forces --------------------------------- */
   let ax = fwx * (thrust + sailEff), ay = fwy * (thrust + sailEff);
   const vf = B.vx * fwx + B.vy * fwy, vl = -B.vx * fwy + B.vy * fwx;
-   const dragF = intoWind ? 2 : 1;                   
-// face au vent : élan perdu 2× plus vite (mais on garde l'erre)
   const df = -0.068 * vf * Math.abs(vf) * dragF - 0.10 * vf * dragF;
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
