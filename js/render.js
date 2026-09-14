@@ -1068,6 +1068,62 @@ function drawBird(t) {
   ctx.restore();
 }
 
+function drawCrabs(t) {
+  if (!L.crabs || !L.crabs.length) return;
+  for (const c of L.crabs) {
+    if (!onScreen(c.x, c.y, 30)) continue;
+    // cycle : aller droite / pause / aller gauche / pause.
+    const cyc = (t * c.spd + c.ph) % 1;
+    let dx, pausing, face;
+    if (cyc < 0.20) {
+      const u = cyc / 0.20; dx = c.amp * (2 * u - 1); pausing = false; face = 1;
+    } else if (cyc < 0.50) {
+      dx = c.amp; pausing = true; face = 1;
+    } else if (cyc < 0.70) {
+      const u = (cyc - 0.50) / 0.20; dx = c.amp * (1 - 2 * u); pausing = false; face = -1;
+    } else {
+      dx = -c.amp; pausing = true; face = -1;
+    }
+    const px = sX(c.x + dx), py = sY(c.y);
+    // ouverture des pinces : clac-clac pendant les pauses
+    const claw = pausing ? 0.35 + 0.65 * Math.abs(Math.sin(t * 5 + c.ph)) : 0.5;
+    ctx.save();
+    ctx.translate(px, py);
+    const sc = 1.6 * CFG.K;
+    ctx.scale(sc, sc);
+    ctx.strokeStyle = rgba(P.line, 0.8); ctx.lineWidth = 0.5 / 1.6; ctx.lineJoin = "round";
+    // carapace
+    ctx.fillStyle = "rgba(214,96,72,0.96)";
+    ctx.beginPath(); ctx.ellipse(0, 0, 0.45, 0.38, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    // six pattes en éventail
+    ctx.lineWidth = 0.18 / 1.6;
+    ctx.beginPath();
+    for (let k = 0; k < 6; k++) {
+      const a = Math.PI + (k / 5 - 0.5) * 2.4;
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(a) * 0.8, Math.sin(a) * 0.8);
+    }
+    ctx.stroke();
+    // deux pinces à l'avant, ouverture = claw
+    ctx.fillStyle = "rgba(214,96,72,0.96)";
+    for (const sd of [-1, 1]) {
+      const cx = face * 0.35, cy = sd * 0.35;
+      const op = 0.12 + claw * 0.22;
+      ctx.beginPath(); ctx.ellipse(cx, cy, 0.16, 0.11, sd * 0.5, 0, TAU); ctx.fill(); ctx.stroke();
+      // pince : deux mandibules qui s'écartent
+      ctx.lineWidth = 0.16 / 1.6;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + face * (0.14 + op), cy + sd * op);
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + face * (0.14 + op), cy - sd * op);
+      ctx.stroke();
+      ctx.lineWidth = 0.5 / 1.6;
+    }
+    ctx.restore();
+  }
+}
+
 /* --------------------------- averses tropicales -------------------------
    Une bande de pluie traverse le lagon dans l'axe du vent : voile gris,
    rides accrues, visibilité réduite. Purement cosmétique, pas de danger. */
@@ -1126,6 +1182,7 @@ function drawWorld(t) {
   drawWindRipples(t);
   drawSparkles(t);
   drawFauna(t);
+  drawCrabs(t);
   blit(TER.shade, 4, 5);
   blit(TER.land, 0, 0);
   drawShoreFoam(t);

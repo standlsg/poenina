@@ -258,33 +258,6 @@ function paintDecor(gl, gs) {
     gl.strokeStyle = rgba(P.line, 0.8); gl.lineWidth = LW; trace(gl, 0, 0); gl.stroke();
   }
 
-  /* crabes sur la plage : discrets, déterministes, près de la ligne de shore */
-  for (let y = L.by0; y < L.by1; y += 11) {
-    if (hash2((y | 0) * 7 + 3, 11) < 0.82) continue;
-    const sx = L.shoreX(y) - 3 - hash2((y | 0), 5) * 6;
-    const x = tX(sx), yy = tY(y), s = Math.max(2.5, T * 1.8);
-    gl.fillStyle = "rgba(214,96,72,0.95)";
-    gl.strokeStyle = rgba(P.line, 0.75); gl.lineWidth = Math.max(1, T * 0.3);
-    // carapace
-    gl.beginPath(); gl.ellipse(x, yy, s, s * 0.85, 0, 0, TAU); gl.fill(); gl.stroke();
-    // six pattes en éventail
-    gl.lineWidth = Math.max(1, T * 0.22);
-    gl.beginPath();
-    for (let k = 0; k < 6; k++) {
-      const a = Math.PI + (k / 5 - 0.5) * 2.4;
-      gl.moveTo(x, yy);
-      gl.lineTo(x + Math.cos(a) * s * 1.5, yy + Math.sin(a) * s * 1.5);
-    }
-    gl.stroke();
-    // deux pinces à l'avant
-    gl.fillStyle = "rgba(214,96,72,0.95)";
-    for (const s2 of [-1, 1]) {
-      gl.beginPath();
-      gl.ellipse(x + s * 0.7, yy + s2 * s * 0.7, s * 0.4, s * 0.3, 0, 0, TAU);
-      gl.fill();
-    }
-  }
-
   for (const hut of L.huts) {
     const x = tX(hut.x), y = tY(hut.y), s = 5.2 * T;
     gs.fillStyle = "rgba(10,52,72,0.42)";

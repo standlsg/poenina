@@ -299,6 +299,15 @@ function buildLevel(n, seedExtra) {
     const sx = L.shoreX(y);
     L.rocks.push({ x: sx + (rng() - 0.5) * 8, y, r: 1.4 + rng() * 2.4, ph: rng() * TAU });
   }
+  L.crabs = [];
+  for (let y = L.by0; y < L.by1; y += 11) {
+    if (rng() < 0.82) continue;
+    const sx = L.shoreX(y) - 3 - rng() * 6;
+    L.crabs.push({
+      x: sx, y, amp: 2.4 + rng() * 2.2, ph: rng() * TAU,
+      spd: 0.10 + rng() * 0.05
+    });
+  }
   L.huts = [];
   for (let i = 0; i < 2 + (n > 2 ? 1 : 0); i++) {
     const y = 70 + rng() * (S.len - 140), sx = L.shoreX(y);
