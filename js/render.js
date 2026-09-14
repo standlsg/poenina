@@ -1055,13 +1055,20 @@ function drawFishers(t) {
         const wave = Math.sin(t * 11) * 0.5; // bras qui s'agitent vite
         ctx.save(); ctx.translate(px, py);
         ctx.globalAlpha = aa;
-        // bouee orange opaque, plus large
-        ctx.fillStyle = "rgb(255,160,38)";
+        // bouee ronde rayee rouge et blanche : 1/3 rouge haut, blanc milieu, 1/3 rouge bas
+        // (clip sur l'ellipse pour peindre les bandes horizontales)
+        ctx.save();
+        ctx.beginPath(); ctx.ellipse(0, 0, 4.0, 3.4, 0, 0, TAU); ctx.clip();
+        ctx.fillStyle = "rgb(255,255,255)";             // bande blanche centrale
+        ctx.fillRect(-4.0, -1.13, 8.0, 2.26);
+        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge haut
+        ctx.fillRect(-4.0, -3.4, 8.0, 1.13);
+        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge bas
+        ctx.fillRect(-4.0, 1.13, 8.0, 2.27);
+        ctx.restore();
+        // contour fonce de la bouee
         ctx.strokeStyle = rgba(P.line, 0.85); ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.ellipse(0, 0, 4.0, 3.4, 0, 0, TAU); ctx.fill(); ctx.stroke();
-        // liseré clair du haut de la bouee
-        ctx.fillStyle = "rgba(255,210,120,0.9)";
-        ctx.beginPath(); ctx.ellipse(0, -0.7, 2.6, 1.6, 0, Math.PI, TAU); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 0, 4.0, 3.4, 0, 0, TAU); ctx.stroke();
         // pecheur agrippe a la bouee : tete plus grande
         ctx.fillStyle = "rgba(70,50,36,0.96)";
         ctx.beginPath(); ctx.arc(0, -1.8, 1.15, 0, TAU); ctx.fill();
@@ -1085,18 +1092,25 @@ function drawFishers(t) {
       }
       continue;
     }
-    // sillage en ligne derriere la barque (meme style que le catamaran)
+    // sillage en ligne derriere la barque (meme style que le catamaran), avec
+    // fondu par point (tp.a decroit dans updateFishers) : segments relies du
+    // plus recent (pleine opacite) vers le plus ancien (quasi transparent).
     if (f.trail && f.trail.length > 1) {
-      ctx.beginPath();
-      for (let i = 0; i < f.trail.length; i++) {
-        const tp = f.trail[i];
-        const x = tp.x - Math.cos(tp.h) * 3.4, y = tp.y - Math.sin(tp.h) * 3.4;
-        i ? ctx.lineTo(sX(x), sY(y)) : ctx.moveTo(sX(x), sY(y));
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      for (const pass of [{ w: 3.2, b: 0.22 }, { w: 1.4, b: 0.5 }]) {
+        for (let i = 0; i < f.trail.length - 1; i++) {
+          const a = f.trail[i], b = f.trail[i + 1];
+          const am = (a.a + b.a) * 0.5;
+          if (am <= 0.01) continue;
+          const x0 = a.x - Math.cos(a.h) * 3.4, y0 = a.y - Math.sin(a.h) * 3.4;
+          const x1 = b.x - Math.cos(b.h) * 3.4, y1 = b.y - Math.sin(b.h) * 3.4;
+          ctx.beginPath();
+          ctx.moveTo(sX(x0), sY(y0)); ctx.lineTo(sX(x1), sY(y1));
+          ctx.strokeStyle = rgba(P.foam, am * pass.b); ctx.lineWidth = pass.w;
+          ctx.stroke();
+        }
       }
-      ctx.lineCap = "round";
-      ctx.strokeStyle = rgba(P.foam, 0.22); ctx.lineWidth = 3.2; ctx.stroke();
-      ctx.strokeStyle = rgba(P.foam, 0.5); ctx.lineWidth = 1.4; ctx.stroke();
-      ctx.lineCap = "butt";
+      ctx.lineCap = "butt"; ctx.lineJoin = "miter";
     }
     // ombre portee legere
     ctx.save(); ctx.translate(px + 2, py + 3); ctx.rotate(-f.h); ctx.scale(CFG.K, CFG.K);

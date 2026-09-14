@@ -168,15 +168,25 @@ function updateFishers(dt, t) {
     }
     const sx = L.shoreX(f.y), rx = L.reefX(f.y);
     f.x = clamp(f.x, sx + 10, rx - 10);
-    // le cap suit toujours la direction reelle du deplacement : le bateau
-    // avance vers l'avant et pivote franchement dans le virage.
+    // le cap suit la direction reelle du deplacement, mais pivote en douceur
+    // (pas de demi-tour instantane) : on rapproche f.h de la cible a un taux fixe.
     const vx = f.x - px0, vy = f.y - py0;
-    if (Math.hypot(vx, vy) > 0.003) f.h = Math.atan2(vy, vx);
-    // trace du sillage : on garde les dernieres positions pour dessiner une ligne
-    f.trail = f.trail || [];
     if (Math.hypot(vx, vy) > 0.003) {
-      f.trail.push({ x: f.x, y: f.y, h: f.h, t: t });
-      if (f.trail.length > 16) f.trail.shift();
+      const target = Math.atan2(vy, vx);
+      const diff = angDiff(target, f.h);
+      f.h = f.h + clamp(diff, -2.4 * dt, 2.4 * dt);   // ~137 deg/s : un vrai demi-tour prend ~1.3 s
+    }
+    // sillage : on echantillonne a distance (comme le catamaran) et on laisse
+    // vieillir les points, pour obtenir une vraie ligne derriere la barque.
+    f.trail = f.trail || [];
+    const last = f.trail[f.trail.length - 1];
+    if (Math.hypot(vx, vy) > 0.003 && (!last || Math.hypot(last.x - f.x, last.y - f.y) > 0.8)) {
+      f.trail.push({ x: f.x, y: f.y, h: f.h, a: 1 });
+      if (f.trail.length > 40) f.trail.shift();
+    }
+    for (let i = f.trail.length - 1; i >= 0; i--) {
+      f.trail[i].a -= dt * 0.4;
+      if (f.trail[i].a <= 0) f.trail.splice(i, 1);
     }
   }
 }
