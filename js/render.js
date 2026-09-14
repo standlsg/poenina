@@ -1055,16 +1055,16 @@ function drawFishers(t) {
         const wave = Math.sin(t * 11) * 0.5; // bras qui s'agitent vite
         ctx.save(); ctx.translate(px, py);
         ctx.globalAlpha = aa;
-        // bouee ronde rayee rouge et blanche : 1/3 rouge haut, blanc milieu, 1/3 rouge bas
-        // (clip sur l'ellipse pour peindre les bandes horizontales)
+        // bouee ronde rayee rouge et blanche : segments verticaux (colonnes)
+        // 1/3 rouge a gauche, blanc au centre, 1/3 rouge a droite.
         ctx.save();
         ctx.beginPath(); ctx.ellipse(0, 0, 4.0, 3.4, 0, 0, TAU); ctx.clip();
-        ctx.fillStyle = "rgb(255,255,255)";             // bande blanche centrale
-        ctx.fillRect(-4.0, -1.13, 8.0, 2.26);
-        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge haut
-        ctx.fillRect(-4.0, -3.4, 8.0, 1.13);
-        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge bas
-        ctx.fillRect(-4.0, 1.13, 8.0, 2.27);
+        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge gauche
+        ctx.fillRect(-4.0, -3.4, 1.33, 6.8);
+        ctx.fillStyle = "rgb(255,255,255)";             // colonne blanche centrale
+        ctx.fillRect(-1.33, -3.4, 2.66, 6.8);
+        ctx.fillStyle = "rgb(214,40,40)";                // tiers rouge droite
+        ctx.fillRect(1.33, -3.4, 2.67, 6.8);
         ctx.restore();
         // contour fonce de la bouee
         ctx.strokeStyle = rgba(P.line, 0.85); ctx.lineWidth = 1.2;

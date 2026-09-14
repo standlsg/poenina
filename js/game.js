@@ -231,11 +231,20 @@ function frame(now) {
     updateBoat(dt, L.time);
     updateFauna(dt, L.time);
     updateFishers(dt, L.time);
-    // collision avec les barques de pêche : coûte une coque, la barque coule
+    // collision barques de peche : test cercle vs coque (OBB) du catamaran,
+    // pas centre-a-centre (la proue et le bau comptaient avant -> trop permissif).
     if (L.fishers && B.alive && B.invuln <= 0) {
+      const FR = 1.6;                  // rayon d'encombrement de la barque (m)
+      const HL = 5.1, HW = 2.6;        // demi-longueur / demi-largeur coque cata (m)
+      const ch = Math.cos(B.h), sh = Math.sin(B.h);
       for (const f of L.fishers) {
         if (f.sunken > 0) continue;
-        if (Math.hypot(B.x - f.x, B.y - f.y) < 3.0) {
+        const dx = f.x - B.x, dy = f.y - B.y;
+        const lx = dx * ch + dy * sh;           // repere bateau : avant (+x)
+        const ly = -dx * sh + dy * ch;           //                tribord (+y)
+        const cx = clamp(lx, -HL, HL);          // point le plus proche sur la coque
+        const cy = clamp(ly, -HW, HW);
+        if (Math.hypot(lx - cx, ly - cy) < FR) {
           f.sunken = 0.001;
           B.hull--;
           if (B.hull <= 0) { Game.die("barque"); break; }
