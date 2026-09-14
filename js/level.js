@@ -23,7 +23,7 @@ function levelSpec(n) {
     /* Probabilité de panne PAR SECONDE de moteur en marche : jamais au
        niveau 1, puis de l'ordre d'une panne sur la traversée au niveau 2
        à deux au niveau 6. Un moteur capricieux, pas un moteur mort.     */
-    failRate: n < 2 ? 0 : (0.0022 + 0.0014 * (n - 2)) * 1.15,
+    failRate: n < 2 ? 0.0016 : (0.0022 + 0.0014 * (n - 2)) * 1.15,
     /* Le jour est calibré sur le temps qu'il faut vraiment pour traverser :
        une course propre arrive avec encore de la lumière, une course
        hésitante finit dans le noir. Le dernier niveau est nocturne.
