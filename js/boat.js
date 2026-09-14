@@ -309,22 +309,26 @@ function updateBoat(dt, t) {
   const hitD = hp.k === K_CORAL ? CFG.PATATE : CFG.DRAFT;
   // en plus du sondage de profondeur (8 points, qui peut passer entre deux
   // patates), on verifie le chevauchement reel de la coque (OBB) avec les
-  // patates de corail proches : si le tiers central de la largeur du cata
-  // empiete sur une patate, c'est un impact. On tient compte de l'encombrement
-  // reel des patates (rout = r * (1 + lobes)), pas seulement du sommet.
+  // patates de corail proches : toute la masse orange visible est fatale au
+  // contact (rayon visuel shapeR ~ r*0.86, demi-largeur coque complete).
   let patateHit = false;
   if (B.invuln <= 0) {
-    const HL = 5.1, HW = 1.05;          // HW = tiers de la demi-largeur (6.6/2/3 ~ 1.1)
+    const HL = 5.1, HW = 2.85;          // demi-longueur / demi-largeur coque
     const ch = Math.cos(B.h), sh = Math.sin(B.h);
-    const near = shapesAt(B.y);
-    if (near) for (let i = 0; i < near.length; i++) {
-      const p = near[i]; if (p.sand) continue;
-      const dx = p.x - B.x, dy = p.y - B.y;
-      const lx = dx * ch + dy * sh;     // repere bateau : avant (+x)
-      const ly = -dx * sh + dy * ch;    //                tribord (+y)
-      const cx = clamp(lx, -HL, HL), cy = clamp(ly, -HW, HW);
-      const encombre = p.r * (1 + p.w1 + p.w2);   // rayon reel de la patate
-      if (Math.hypot(lx - cx, ly - cy) < encombre) { patateHit = true; break; }
+    // on sonde 3 tranches y adjacentes (patate a cheval sur une frontiere de bande)
+    for (let bj = -1; bj <= 1 && !patateHit; bj++) {
+      const near = shapesAt(B.y + bj * 30);
+      if (!near) continue;
+      for (let i = 0; i < near.length; i++) {
+        const p = near[i]; if (p.sand) continue;
+        const dx = p.x - B.x, dy = p.y - B.y;
+        const lx = dx * ch + dy * sh;   // repere bateau : avant (+x)
+        const ly = -dx * sh + dy * ch;  //                tribord (+y)
+        const cx = clamp(lx, -HL, HL), cy = clamp(ly, -HW, HW);
+        // rayon de la masse orange le long de la direction bateau->patate
+        const visR = shapeR(p, dx, dy);
+        if (Math.hypot(lx - cx, ly - cy) < visR) { patateHit = true; break; }
+      }
     }
   }
   if ((hp.d < hitD || hp.k === K_OCEAN || patateHit) && B.invuln <= 0) {

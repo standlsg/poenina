@@ -196,6 +196,11 @@ function paintCoralDetail(gw, gl) {
       gw.beginPath(); gw.arc(x - lb.s * R * 0.28, y - lb.s * R * 0.3, lb.s * R * 0.55, 0, TAU); gw.fill();
     }
     gw.restore();
+    // liseré orange plus sombre sur tout le contour de la patate : symbolise
+    // la partie profonde (sous la surface) et délimite nettement la masse orange.
+    gw.strokeStyle = rgba(mixRGB(P.coralDk, P.line, 0.4), 0.9);
+    gw.lineWidth = Math.max(1.6, T * 0.7);
+    lobePath(gw, p, 1.0); gw.stroke();
     if (!p.emerg) continue;
     // têtes de corail hors d'eau : facette claire en haut à gauche + liseré
     for (const lb of p.lobes) {
