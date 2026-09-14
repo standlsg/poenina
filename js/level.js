@@ -95,9 +95,8 @@ function probe(x, y) {
 /* rayon d'une patate selon la direction : des formes lobées, pas des ronds */
 function shapeR(p, dx, dy) {
   const a = Math.atan2(dy, dx);
-  return p.r * (1 + p.w1 * Math.sin(3 * a + p.p1) + p.w2 * Math.sin(5 * a + p.p2));
+  return p.r * 0.86 * (1 + p.w1 * Math.sin(3 * a + p.p1) + p.w2 * Math.sin(5 * a + p.p2));
 }
-
 /* ------------------------- champ de courant ----------------------------
    L'eau d'un lagon ne part pas dans n'importe quelle direction : elle
    longe le chenal, et elle contourne les obstacles en accélérant sur
