@@ -307,8 +307,28 @@ function updateBoat(dt, t) {
   // seuil de collision : beaucoup plus strict sur le corail (patates) que sur
   // le tirant d'eau, pour coller a la taille visible des patates.
   const hitD = hp.k === K_CORAL ? CFG.PATATE : CFG.DRAFT;
-  if ((hp.d < hitD || hp.k === K_OCEAN) && B.invuln <= 0) {
-    const cause = hp.k === K_CORAL ? "patate"
+  // en plus du sondage de profondeur (8 points, qui peut passer entre deux
+  // patates), on verifie le chevauchement reel de la coque (OBB) avec les
+  // patates de corail proches : si le tiers central de la largeur du cata
+  // empiete sur une patate, c'est un impact. On tient compte de l'encombrement
+  // reel des patates (rout = r * (1 + lobes)), pas seulement du sommet.
+  let patateHit = false;
+  if (B.invuln <= 0) {
+    const HL = 5.1, HW = 1.05;          // HW = tiers de la demi-largeur (6.6/2/3 ~ 1.1)
+    const ch = Math.cos(B.h), sh = Math.sin(B.h);
+    const near = shapesAt(B.y);
+    if (near) for (let i = 0; i < near.length; i++) {
+      const p = near[i]; if (p.sand) continue;
+      const dx = p.x - B.x, dy = p.y - B.y;
+      const lx = dx * ch + dy * sh;     // repere bateau : avant (+x)
+      const ly = -dx * sh + dy * ch;    //                tribord (+y)
+      const cx = clamp(lx, -HL, HL), cy = clamp(ly, -HW, HW);
+      const encombre = p.r * (1 + p.w1 + p.w2);   // rayon reel de la patate
+      if (Math.hypot(lx - cx, ly - cy) < encombre) { patateHit = true; break; }
+    }
+  }
+  if ((hp.d < hitD || hp.k === K_OCEAN || patateHit) && B.invuln <= 0) {
+    const cause = (hp.k === K_CORAL || patateHit) ? "patate"
       : (hp.k === K_REEF || hp.k === K_OCEAN) ? "barriere" : "sable";
     B.hull--;
     if (B.hull <= 0) { Game.die(cause); return; }

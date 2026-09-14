@@ -1327,9 +1327,9 @@ function drawWorld(t) {
   drawAnchorage(t);
   drawWake();
   drawSinkEffect(t);
+  drawFishers(t);
   drawBoat(t);
   drawParts();
-  drawFishers(t);
   applyLight();
   drawNavLights();
   drawBird(t);
