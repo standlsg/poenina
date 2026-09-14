@@ -185,11 +185,16 @@ function updateBoat(dt, t) {
   /* ---------------------------- forces --------------------------------- */
   let ax = fwx * (thrust + sailF), ay = fwy * (thrust + sailF);
   const vf = B.vx * fwx + B.vy * fwy, vl = -B.vx * fwy + B.vy * fwx;
-  const df = -0.068 * vf * Math.abs(vf) - 0.10 * vf;
+  /* face au vent (twa < 55°) : la voile ne pousse plus, et le bateau
+     tient mal son cap : l'erre part deux fois plus vite et la coque
+     loffe doucement vers le travers à la tengente vent+courant.       */
+  const intoWind = B.sailUp > 0.15 && B.twa < 55;
+  const dragF = intoWind ? 2 : 1;
+  const df = -0.068 * vf * Math.abs(vf) * dragF - 0.10 * vf * dragF;
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
   B.vx += ax * h; B.vy += ay * h;
-
+   
   /* --------------------- barre : il faut de l'erre --------------------- */
   /* À l'écran l'axe y est inversé : un cap qui croît tourne vers la gauche.
      D'où le signe, pour que D = tribord et Q = bâbord.                   */
