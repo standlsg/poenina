@@ -156,21 +156,24 @@ function updateFishers(dt, t) {
       else { f.h = dx > 0 ? 0 : Math.PI; f.x += Math.sign(dx) * 1.4 * dt; f.y += 0; }
       continue;
     }
+    const px0 = f.x, py0 = f.y;
     f.ph += dt * f.spd;
     if (f.mode === "circle") {
-      // tourne autour de son point d'ancrage : cap = tangente au cercle
-      f.h = (f.ph * 1.0) % TAU;
       f.x = f.bx + Math.cos(f.ph) * f.amp;
       f.y = f.by + Math.sin(f.ph) * f.amp * 0.7;
+      f.h = (f.ph + Math.PI / 2) % TAU;          // tangente : le bateau vire dans le virage
     } else {
-      // pendule : va-et-vient le long d'un axe, cap dans le sens du déplacement
       const s = Math.sin(f.ph);
       f.x = f.bx + Math.cos(f.h0 || 0) * s * f.amp;
       f.y = f.by + Math.sin(f.h0 || 0) * s * f.amp;
       f.h = s > 0 ? (f.h0 || 0) : (f.h0 || 0) + Math.PI;
     }
-    // garde la barque dans le chenal : jamais sur la plage ni le récif
     const sx = L.shoreX(f.y), rx = L.reefX(f.y);
     f.x = clamp(f.x, sx + 10, rx - 10);
+    // sillage à l'arrière de la barque (moteur)
+    const moved = Math.hypot(f.x - px0, f.y - py0);
+    if (moved > 0.004 && Math.random() < dt * 8) {
+      spawnRipple(f.x - Math.cos(f.h) * 2.4, f.y - Math.sin(f.h) * 2.4, 0.22);
+    }
   }
 }
