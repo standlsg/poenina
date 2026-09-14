@@ -223,12 +223,13 @@ function updateBoat(dt, t) {
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
 
-     /* Sans propulsion effective (ancre flottante ou face au vent en
-     virement) : l'erre décroît proportionnellement — 30 %/s dans tous
-     les cas. La traînée quadratique fait déjà le travail face au vent,
-     l'amortissement garde l'élan pour finir le virement de bord. */
+   /* Sans propulsion (ancre flottante : moteur coupé ET voile affalée) :
+     l'erre décroît à 30 %/s. Pendant un virement (intoWind) on ne
+     l'applique pas : la traînée hydrodynamique normale ralentit le
+     bateau face au vent tout en gardant assez d'erre pour franchir
+     le cone et gonfler l'autre bord.                          */
   const erreSpeed = Math.hypot(B.vx, B.vy);
-  if ((noProp || intoWind) && erreSpeed > 0.05) {
+  if (noProp && erreSpeed > 0.05) {
     const damp = Math.pow(0.7, dt);           // 30 %/s
     const k = (damp - 1) / h;
     ax += B.vx * k; ay += B.vy * k;
