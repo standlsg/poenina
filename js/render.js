@@ -368,7 +368,7 @@ function drawFauna(t) {
       // pointes noires
       ctx.fillStyle = rgba(mixRGB(wc, [26, 32, 44], Math.max(vis, 0.6)), 1);
       ctx.beginPath(); ctx.arc(-0.72, 0, 0.17, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(-2.85, tail + 1.15, 0.16, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(-3.35, tail + 0.42, 0.16, 0, TAU); ctx.fill();
       for (const s of [1, -1]) { ctx.beginPath(); ctx.arc(-0.42, s * 1.55, 0.14, 0, TAU); ctx.fill(); }
       ctx.fillStyle = rgba(P.line, 0.7 * vis);
       ctx.beginPath(); ctx.arc(2.05, 0.33, 0.11, 0, TAU); ctx.arc(2.05, -0.33, 0.11, 0, TAU); ctx.fill();
