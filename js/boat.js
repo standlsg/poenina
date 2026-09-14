@@ -142,7 +142,7 @@ function updateBoat(dt, t) {
        multiplie jusqu'à douze fois dans le rouge. Pas de période de
        grâce — mais le moteur démarre froid, ce qui protège de fait les
        premières secondes.                                             */
-    const rate = L.failRate * (1 + 11 * B.hot);
+    const rate = L.failRate * (1 + 16 * B.hot);
     if (B.sputter <= 0 && Math.random() < rate * dt) {
       B.sputter = 2.0; Snd.sSputter();
     }
