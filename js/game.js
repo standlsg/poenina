@@ -235,6 +235,16 @@ function frame(now) {
       const c = Math.cos(B.h), s2 = Math.sin(B.h);
       spawnSpray(B.x - 4.2 * c, B.y - 4.2 * s2, 0.5);
     }
+    // fumée noire à l'échappement quand le moteur est en panne : il tousse
+    if (B.engineDead > 0 && B.alive && Math.random() < dt * 14) {
+      const c = Math.cos(B.h), s2 = Math.sin(B.h);
+      // capot moteur à l'arrière de la nacelle, légèrement tribord
+      const ox = B.x - 4.2 * c - 0.5 * s2, oy = B.y - 4.2 * s2 + 0.5 * c;
+      // dérive vers l'arrière + un peu de courant
+      const vx = -c * 0.6 + B.cx * 0.5 + (Math.random() - 0.5) * 0.4;
+      const vy = -s2 * 0.6 + B.cy * 0.5 + (Math.random() - 0.5) * 0.4;
+      spawnSmoke(ox, oy, vx, vy);
+    }
   }
   else if (st === "dead") {
     Game.deadT += dt;

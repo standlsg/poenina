@@ -83,6 +83,16 @@ function spawnDebris(x, y) {
     t: 0, r: 0.3 + Math.random() * 0.5, kind: 2, a: Math.random() * TAU, va: (Math.random() - 0.5) * 6
   });
 }
+/* fumée noire d'échappement : le moteur en panne tousse et fume.
+   La particule naît au capot, dérive vers l'arrière (vers où va le vent
+   relatif), gonfle et s'estompe.                                        */
+function spawnSmoke(x, y, vx, vy) {
+  if (parts.length > PARTS_MAX) return;
+  parts.push({
+    x, y, vx, vy, life: 0.9 + Math.random() * 0.5,
+    t: 0, r: 0.28 + Math.random() * 0.18, kind: 3
+  });
+}
 function updateParts(dt) {
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i]; p.t += dt;
@@ -90,6 +100,7 @@ function updateParts(dt) {
     p.x += p.vx * dt; p.y += p.vy * dt;
     if (p.kind === 0) { p.vx *= 0.92; p.vy *= 0.92; p.r += dt * 0.5; }
     else if (p.kind === 1) p.r += dt * 4.5;
+    else if (p.kind === 3) { p.vx *= 0.94; p.vy *= 0.94; p.r += dt * 0.9; }
     else { p.vx *= 0.95; p.vy *= 0.95; p.a += p.va * dt; }
   }
 }
