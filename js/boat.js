@@ -200,13 +200,6 @@ function updateBoat(dt, t) {
   const noProp = !hasProp && !intoWind;             // moteur coupé ET voile affalée = ancre flottante
 
 
-   
-  /* Face au vent (twa < 55°) la voile ne pousse plus : c'est comme si le
-     bateau n'avait pas de propulsion. On ne retient donc de la force
-     vélique que hors du cone d'interdiction.                          */
-  const sailEff = (B.sailUp > 0.15 && B.twa >= 55) ? sailF : 0;
-  const hasProp = thrust > 0.01 || sailEff > 0.01;
-
   /* ------------------- courant + dérive due au vent --------------------
      Le courant s'impose toujours à la position : la masse d'eau emporte
      le bateau, point. La dérive due au vent (le catamaran, voile même
