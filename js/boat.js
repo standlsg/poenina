@@ -219,7 +219,7 @@ function updateBoat(dt, t) {
   /* ---------------------------- forces --------------------------------- */
   let ax = fwx * (thrust + sailEff), ay = fwy * (thrust + sailEff);
   const vf = B.vx * fwx + B.vy * fwy, vl = -B.vx * fwy + B.vy * fwx;
-  const df = -0.068 * vf * Math.abs(vf) * dragF - 0.10 * vf * dragF;
+   const df = -0.068 * vf * Math.abs(vf) - 0.10 * vf;
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
 
