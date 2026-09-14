@@ -223,15 +223,13 @@ function updateBoat(dt, t) {
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
 
-    /* Sans propulsion effective (ancre flottante ou face au vent en
-     virement) : l'erre décroît proportionnellement — 30 %/s sans rien,
-     40 %/s face au vent (un peu plus vite, mais jamais brutal). Cela
-     garde assez d'élan dans l'axe pour que les safrans accrochent et
-     finissent le virement de bord.                              */
+     /* Sans propulsion effective (ancre flottante ou face au vent en
+     virement) : l'erre décroît proportionnellement — 30 %/s dans tous
+     les cas. La traînée quadratique fait déjà le travail face au vent,
+     l'amortissement garde l'élan pour finir le virement de bord. */
   const erreSpeed = Math.hypot(B.vx, B.vy);
   if ((noProp || intoWind) && erreSpeed > 0.05) {
-    const rate = intoWind ? 0.6 : 0.7;          // 40 %/s face au vent, 30 %/s sinon
-    const damp = Math.pow(rate, dt);
+    const damp = Math.pow(0.7, dt);           // 30 %/s
     const k = (damp - 1) / h;
     ax += B.vx * k; ay += B.vy * k;
   }
