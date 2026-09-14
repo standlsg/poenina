@@ -208,13 +208,13 @@ function paintCoralDetail(gw, gl) {
       gl.strokeStyle = rgba(mixRGB(P.line, P.coralDk, 0.35), 0.62); gl.lineWidth = Math.max(1, T * 0.5);
       gl.beginPath(); gl.arc(x, y, r, 0, TAU); gl.stroke();
     }
-    // étoile de mer sur la patate émergée (détail discret, déterministe)
-    if (hash2(p.x | 0, p.y | 0) > 0.74) {
+    // étoile de mer sur la patate émergée : violet vif pour trancher sur le corail orange
+    if (hash2(p.x | 0, p.y | 0) > 0.64) {
       const a = hash2((p.x | 0) * 3, (p.y | 0) * 5) * TAU;
       const x = cx + Math.cos(a) * R * 0.35, y = cy - Math.sin(a) * R * 0.35;
-      const s = Math.max(1.4, T * 0.85);
-      gl.fillStyle = "rgba(230,110,96,0.95)";
-      gl.strokeStyle = rgba(P.line, 0.7); gl.lineWidth = Math.max(1, T * 0.3);
+      const s = Math.max(2.0, T * 1.2);
+      gl.fillStyle = "rgba(168,86,196,0.96)";
+      gl.strokeStyle = rgba(P.line, 0.85); gl.lineWidth = Math.max(1.2, T * 0.4);
       gl.beginPath();
       for (let k = 0; k < 5; k++) {
         const t1 = k / 5 * TAU, t2 = (k + 0.5) / 5 * TAU;
