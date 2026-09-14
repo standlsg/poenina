@@ -205,6 +205,8 @@ function paintCoralDetail(gw, gl) {
       gl.beginPath(); gl.arc(x, y, r, 0, TAU); gl.fill();
       gl.fillStyle = rgba(P.rockLt, 0.92);
       gl.beginPath(); gl.arc(x - r * 0.26, y - r * 0.3, r * 0.6, 0, TAU); gl.fill();
+      gl.strokeStyle = rgba(mixRGB(P.line, P.coralDk, 0.35), 0.62); gl.lineWidth = Math.max(1, T * 0.5);
+      gl.beginPath(); gl.arc(x, y, r, 0, TAU); gl.stroke();
     }
     // étoile de mer sur la patate émergée : violet vif pour trancher sur le corail orange
     if (hash2(p.x | 0, p.y | 0) > 0.64) {
