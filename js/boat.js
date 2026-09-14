@@ -197,7 +197,12 @@ function updateBoat(dt, t) {
   const sailEff = (sailHoisted && B.twa >= 55) ? sailF : 0;
   const hasProp = thrust > 0.01 || sailEff > 0.01;
   const intoWind = sailHoisted && B.twa < 55;       // virement : voile hissée face au vent
-  const noProp = !hasProp && !intoWind;             // moteur coupé ET voile affalée = ancre flottante
+   const noProp = !hasProp && !intoWind;             // moteur coupé ET voile affalée = ancre flottante
+  /* À l'arrêt sans propulsion effective (ancre flottante, ou virement
+     raté figé face au vent) le bateau doit loffer travers à la dérive.
+     On garde le freinage pour noProp seul, mais la loffe travers se
+     déclenche aussi pour intoWind une fois l'erre tarie.        */
+  const driftAlign = noProp || (intoWind && Math.hypot(B.vx, B.vy) < 0.13);
 
 
   /* ------------------- courant + dérive due au vent --------------------
