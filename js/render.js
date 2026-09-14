@@ -109,31 +109,6 @@ function drawSparkles(t) {
   }
 }
 
-/* --------------------------- reflet du soleil --------------------------- */
-/* Barre dorée allongée dans l'axe du vent : pas une vraie réflexion
-   optique, juste un clin d'œil visuel qui danse avec la houle. Atténué
-   au crépuscule et éteint la nuit.                                    */
-function drawSunGlare(t) {
-  const s = clamp(L.sun, 0, 1);
-  if (s > 0.78) return;                       // trop tard : nuit
-  const g = (0.78 - s) / 0.78;                // 1 plein jour → 0 tombée
-  const wdx = Math.cos(L.windFrom + Math.PI), wdy = Math.sin(L.windFrom + Math.PI);
-  const cx = sX(cam.x), cy = sY(cam.y);
-  const len = Math.hypot(W, H) * 0.55;
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(Math.atan2(wdy, -wdx));          // axe du vent en écran
-  ctx.globalCompositeOperation = "lighter";
-  for (let k = 0; k < 6; k++) {
-    const a = (0.10 + 0.07 * Math.sin(t * 0.9 + k)) * g * (1 - k / 6);
-    if (a <= 0.005) continue;
-    ctx.fillStyle = rgba([255, 244, 214], a);
-    const w = len * (0.5 + k * 0.1), h = (7 + k * 2.4) * (0.6 + 0.4 * Math.sin(t * 1.7 + k));
-    ctx.beginPath(); ctx.ellipse(0, 0, w, h, 0, 0, TAU); ctx.fill();
-  }
-  ctx.restore();
-  ctx.globalCompositeOperation = "source-over";
-}
 
 /* ------------------------------ écume ---------------------------------- */
 function foamLine(xf, t, amp, freq, spd, width, alpha) {
@@ -1052,37 +1027,44 @@ function updateBird(dt) {
 }
 function drawBird(t) {
   if (!bird.active) return;
-  const flap = Math.sin(bird.ph);
+  // Un oiseau bat des ailes de haut en bas. Vu de dessus, ce battement
+  // se lit à l'envergure apparente : grande quand les ailes sont à plat,
+  // quasi nulle quand elles montent ou descendent (vues par la tranche).
+  // Deux pulsations par cycle (plat-tranche-plat-tranche), d'où |cos|.
+  const fl = 1.45 * (0.16 + 0.84 * Math.abs(Math.cos(bird.ph)));  // envergure
   const dir = bird.vx > 0 ? 1 : -1;
   ctx.save();
   ctx.translate(bird.x, bird.y);
-  ctx.scale(dir * bird.sc, bird.sc);
-  // ombre portée lointaine sur l'eau
+  ctx.rotate(dir < 0 ? Math.PI : 0);     // orienté dans le sens du vol (avant = +x)
+  ctx.scale(bird.sc, bird.sc);
+  // ombre portée lointaine sur l'eau, décalée vers le bas
   ctx.fillStyle = "rgba(14,43,58,0.12)";
-  ctx.beginPath(); ctx.ellipse(0, 9 / bird.sc, 10, 3, 0, 0, TAU); ctx.fill();
-  ctx.strokeStyle = "rgba(10,30,42,0.85)"; ctx.lineWidth = 1.4;
-  // corps
+  ctx.beginPath(); ctx.ellipse(0, 8 / bird.sc, 9 * fl, 2.5, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = "rgba(10,30,42,0.85)"; ctx.lineWidth = 1.3;
+  ctx.lineJoin = "round";
+  // ailes : deux formes symétriques perpendiculaires au vol, envergure = fl
   ctx.fillStyle = "rgba(28,40,52,0.92)";
-  ctx.beginPath(); ctx.ellipse(0, 0, 7, 1.8, 0, 0, TAU); ctx.fill();
+  for (const s of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(0.6, s * 0.6);
+    ctx.quadraticCurveTo(0.2, s * fl, -1.8, s * fl * 0.92);
+    ctx.quadraticCurveTo(-2.6, s * fl * 0.5, -1.4, s * 0.6);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+  }
+  // corps vu de dessus : ellipse allongée dans le sens du vol
+  ctx.fillStyle = "rgba(28,40,52,0.95)";
+  ctx.beginPath(); ctx.ellipse(0, 0, 4.2, 1.5, 0, 0, TAU); ctx.fill();
   ctx.stroke();
-  // tête + bec
+  // tête + bec vers l'avant
+  ctx.beginPath(); ctx.arc(3.6, 0, 1.5, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(4.8, 0); ctx.lineTo(6.4, 0); ctx.stroke();
+  // queue en éventail à l'arrière
+  ctx.fillStyle = "rgba(28,40,52,0.88)";
   ctx.beginPath();
-  ctx.moveTo(6, -0.4); ctx.lineTo(10, 0.2); ctx.lineTo(6, 0.6); ctx.closePath(); ctx.fill();
-  // ailes en W qui battent
-  const wy = flap * 4;
-  ctx.beginPath();
-  ctx.moveTo(-1, 0);
-  ctx.quadraticCurveTo(-6, -1 - wy, -11, 0.5 - wy * 0.4);
-  ctx.quadraticCurveTo(-6, 0.5, -1, 0);
-  ctx.moveTo(-1, 0);
-  ctx.quadraticCurveTo(4, -1 - wy, 9, 0.5 - wy * 0.4);
-  ctx.quadraticCurveTo(4, 0.5, -1, 0);
-  ctx.fillStyle = "rgba(28,40,52,0.88)"; ctx.fill();
-  ctx.stroke();
-  // queue fourchue
-  ctx.beginPath();
-  ctx.moveTo(-6, 0); ctx.lineTo(-12, -1.4); ctx.lineTo(-12, 1.4); ctx.closePath(); ctx.fill();
-  ctx.stroke();
+  ctx.moveTo(-3.6, 0); ctx.lineTo(-5.8, -1.6); ctx.lineTo(-5.8, 1.6); ctx.closePath();
+  ctx.fill(); ctx.stroke();
   ctx.restore();
 }
 
@@ -1143,7 +1125,6 @@ function drawWorld(t) {
   drawCurrents();
   drawWindRipples(t);
   drawSparkles(t);
-  drawSunGlare(t);
   drawFauna(t);
   blit(TER.shade, 4, 5);
   blit(TER.land, 0, 0);
