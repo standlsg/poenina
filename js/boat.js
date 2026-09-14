@@ -284,5 +284,4 @@ function updateBoat(dt, t) {
       if (B.anchoring > 1.6) { B.anchored = true; Game.win(); }
     }
   } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
-  } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
 }
