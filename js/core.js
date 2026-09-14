@@ -52,6 +52,9 @@ const CFG = {
   K: 4.2,           // pixels internes par mètre
   TPM: 2.1,         // texels par mètre dans le tampon de terrain (= K/2, blit x2)
   DRAFT: 1.15,      // tirant d'eau du catamaran
+  PATATE: 3.2,      // seuil de collision corail : beaucoup plus strict que le
+                    // tirant d'eau, pour coller a la taille visible des patates
+                    // (la coque y accroche de loin, pas seulement au contact du fond)
   SCRAPE: 0.65,     // marge sous quille qui déclenche le frottement
   LOA: 11.3, BEAM: 6.6,
   MAXLEVEL: 6,

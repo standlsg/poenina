@@ -304,7 +304,10 @@ function updateBoat(dt, t) {
   B.clearance = hp.d - CFG.DRAFT;
   B.invuln = Math.max(0, B.invuln - dt);
   B.hitFlash = Math.max(0, B.hitFlash - dt * 1.8);
-  if ((hp.d < CFG.DRAFT || hp.k === K_OCEAN) && B.invuln <= 0) {
+  // seuil de collision : beaucoup plus strict sur le corail (patates) que sur
+  // le tirant d'eau, pour coller a la taille visible des patates.
+  const hitD = hp.k === K_CORAL ? CFG.PATATE : CFG.DRAFT;
+  if ((hp.d < hitD || hp.k === K_OCEAN) && B.invuln <= 0) {
     const cause = hp.k === K_CORAL ? "patate"
       : (hp.k === K_REEF || hp.k === K_OCEAN) ? "barriere" : "sable";
     B.hull--;

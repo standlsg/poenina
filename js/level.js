@@ -147,17 +147,22 @@ function currentAt(x, y, t) {
 
 /* ------------------- validation : le chenal passe-t-il ? ---------------- */
 function pathExists() {
-  const C = 3, need = CFG.DRAFT + 0.4;
+  const C = 3, need = CFG.DRAFT + 0.4, needC = CFG.PATATE + 0.4;
   const x0 = L.bx0, y0 = 0, w = Math.ceil((L.bx1 - x0) / C), h = Math.ceil(L.len / C);
   const free = new Uint8Array(w * h);
-  const dep = new Float32Array(w * h);
-  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++)
-    dep[j * w + i] = probe(x0 + i * C + C / 2, y0 + j * C + C / 2).d;
+  const dep = new Float32Array(w * h), knd = new Uint8Array(w * h);
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
-    let good = dep[j * w + i] > need ? 1 : 0;
+    const pr = probe(x0 + i * C + C / 2, y0 + j * C + C / 2);
+    dep[j * w + i] = pr.d; knd[j * w + i] = pr.k;
+  }
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const th = knd[j * w + i] === K_CORAL ? needC : need;
+    let good = dep[j * w + i] > th ? 1 : 0;
     for (let dj = -1; dj <= 1 && good; dj++) for (let di = -1; di <= 1; di++) {
       const jj = j + dj, ii = i + di;
-      if (jj < 0 || jj >= h || ii < 0 || ii >= w || dep[jj * w + ii] <= need) { good = 0; break; }
+      if (jj < 0 || jj >= h || ii < 0 || ii >= w) { good = 0; break; }
+      const th2 = knd[jj * w + ii] === K_CORAL ? needC : need;
+      if (dep[jj * w + ii] <= th2) { good = 0; break; }
     }
     free[j * w + i] = good;
   }
