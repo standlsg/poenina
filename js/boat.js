@@ -21,7 +21,8 @@ const B = {
   clearance: 9, scrapeCd: 0, warnCd: 0
 };
 
-/* polaire de la grand-voile : angle au vent réel (deg) -> rendement */
+/* polaire de la grand-voile : angle au vent réel (deg) -> rendement.
+   Zone d'interdiction (vent debout) sur 55° de chaque côté. */
 const POLAR = [[0, 0], [45, 0], [55, 0.12], [65, 0.40], [78, 0.72], [95, 0.93],
 [110, 1.0], [130, 0.95], [150, 0.80], [170, 0.62], [180, 0.54]];
 function polar(a) {
@@ -91,8 +92,14 @@ function updateBoat(dt, t) {
   const h = dt * CFG.VIS;
 
   if (!B.alive) {
-    if (B.dead === "sable") { B.stuck = Math.min(1, B.stuck + dt * 0.8); B.vx *= 0.82; B.vy *= 0.82; }
-    else B.sinking = Math.min(1, B.sinking + dt * 0.32);
+    if (B.dead === "sable") {
+      B.stuck = Math.min(1, B.stuck + dt * 0.8); B.vx *= 0.82; B.vy *= 0.82;
+    } else {
+      B.sinking = Math.min(1, B.sinking + dt * 0.32);
+      // le bateau coule : ondes à la surface, seulement ici
+      B.leak += dt;
+      if (B.leak > 0.35) { B.leak = 0; spawnRipple(B.x - Math.cos(B.h) * 3, B.y - Math.sin(B.h) * 3, 0.3); }
+    }
     return;
   }
   if (B.anchored) { B.vx *= 0.9; B.vy *= 0.9; B.bob = 0.1 * Math.sin(t * 1.9); return; }
@@ -182,52 +189,74 @@ function updateBoat(dt, t) {
     if (B.luff > 0.5 && Math.random() < dt * 9) Snd.sLuff(1);
   } else B.luff = 0;
 
+  /* Face au vent (twa < 55°) la voile ne pousse plus : c'est comme si le
+     bateau n'avait pas de propulsion. On ne retient donc de la force
+     vélique que hors du cone d'interdiction.                          */
+  const sailEff = (B.sailUp > 0.15 && B.twa >= 55) ? sailF : 0;
+  const hasProp = thrust > 0.01 || sailEff > 0.01;
+
+  /* ------------------- courant + dérive due au vent --------------------
+     Le courant s'impose toujours à la position : la masse d'eau emporte
+     le bateau, point. La dérive due au vent (le catamaran, voile même
+     toile affalée : franc-bord, rouf, mât) est elle aussi une vitesse
+     imposée — mais elle s'atténue dès que le bateau a de l'erre : les
+     coques en mouvement tiennent leur cap. À l'arrêt elles ne retiennent
+     rien, la dérive est pleine ; au-dessus d'un demi-nœud d'erre elle
+     s'annule (racine carrée). Le courant, lui, pousse toujours.
+
+     driftDir = direction de la dérive combinée vent+courant, celle qui
+     sert à orienter le bateau travers à la dérive sans propulsion.   */
+  const c = currentAt(B.x, B.y, t);
+  B.cx = c[0]; B.cy = c[1];
+  const lee = 0.40 * (L.windPow / 12) * (1 + B.sailUp * 0.5);
+  B.lx = -wx * lee; B.ly = -wy * lee;
+
   /* ---------------------------- forces --------------------------------- */
-  let ax = fwx * (thrust + sailF), ay = fwy * (thrust + sailF);
+  let ax = fwx * (thrust + sailEff), ay = fwy * (thrust + sailEff);
   const vf = B.vx * fwx + B.vy * fwy, vl = -B.vx * fwy + B.vy * fwx;
-  /* face au vent (twa < 55°) : la voile ne pousse plus, et le bateau
-     tient mal son cap : l'erre part deux fois plus vite et la coque
-     loffe doucement vers le travers à la tengente vent+courant.       */
-  const intoWind = B.sailUp > 0.15 && B.twa < 55;
-  const dragF = intoWind ? 2 : 1;
-  const df = -0.068 * vf * Math.abs(vf) * dragF - 0.10 * vf * dragF;
+  const df = -0.068 * vf * Math.abs(vf) - 0.10 * vf;
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
+
+  /* Sans propulsion : l'erre part vite (~2 kt/s), frein franc jusqu'à
+     l'arrêt. Une fois arrêté, la dérive prend le relais et le bateau
+     loffe travers à la dérive (voir plus bas).                       */
+  const erreSpeed = Math.hypot(B.vx, B.vy);
+  if (!hasProp && erreSpeed > 0.05) {
+    const brake = 1.03;                       // m/s² ≈ 2 kt/s
+    const cap = Math.min(erreSpeed / h, brake);
+    ax -= B.vx / erreSpeed * cap;
+    ay -= B.vy / erreSpeed * cap;
+  }
   B.vx += ax * h; B.vy += ay * h;
-   
+
   /* --------------------- barre : il faut de l'erre --------------------- */
   /* À l'écran l'axe y est inversé : un cap qui croît tourne vers la gauche.
      D'où le signe, pour que D = tribord et Q = bâbord.                   */
-   const rudder = clamp(Math.abs(vf) / 1.5, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
+  const rudder = clamp(Math.abs(vf) / 1.5, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
   const want = -B.steer * 0.72 * rudder * (vf < -0.2 ? -1 : 1);
   B.yaw += (want - B.yaw) * Math.min(1, h * 3.4);
-  /* face au vent sans erre : le bateau loffe vers le travers, porté par la
-     tangente vent+ courant. La direction cible est perpendiculaire au
-     vent (twa = 90°), biaisée par le courant.                        */
-  if (intoWind && Math.abs(vf) < 0.6) {
-    const cwx = Math.cos(L.windFrom + Math.PI / 2), cwy = Math.sin(L.windFrom + Math.PI / 2);
-    const aim = Math.atan2(cwy + B.cy, cwx + B.cx);
-    const diff = angDiff(aim, B.h);
-    B.yaw += clamp(diff, -1, 1) * Math.min(1, h * 1.2);
+
+  /* Sans propulsion et à l'arrêt : le bateau présente son flanc à la
+     dérive (ancre flottante). Il s'oriente travers à la dérive combinée
+     vent+courant en ~3 s, puis dérive à pleine force.                */
+  if (!hasProp && Math.hypot(B.vx, B.vy) < 0.1) {
+    const driftDir = Math.atan2(B.ly + B.cy, B.lx + B.cx);
+    let target = driftDir + Math.PI / 2;     // travers = perpendiculaire à la dérive
+    if (Math.abs(angDiff(target, B.h)) > Math.PI / 2) target += Math.PI;  // côté le plus court
+    B.h += angDiff(target, B.h) * Math.min(1, dt / 3);
   }
   B.h = (B.h + B.yaw * h) % TAU;
 
-  /* ------------------- courant + dérive due au vent --------------------
-     Un catamaran, c'est une voile même toile affalée : haut franc-bord,
-     rouf, mât. Sa dérive est du même ordre que le courant, et d'autant
-     plus forte qu'il a peu d'erre (les coques ne retiennent rien à
-     l'arrêt). On la traite donc comme le courant — une vitesse imposée —
-     et non comme une poussée, que la traînée latérale annulait presque. */
-  const lee = 0.40 * (L.windPow / 12) * (1 + B.sailUp * 0.5)
-    * clamp(1 - Math.abs(vf) / 4.2, 0.32, 1);
-  B.lx = -wx * lee; B.ly = -wy * lee;
-  const c = currentAt(B.x, B.y, t);
-  B.cx = c[0]; B.cy = c[1];
-  B.x += (B.vx + B.cx + B.lx) * h; B.y += (B.vy + B.cy + B.ly) * h;
+  /* Application de la position : courant toujours plein, dérive vent
+     atténuée par √(1 − erre/vfMax), vfMax = 0,25 m/s (≈ 0,5 kt).     */
+  const att = Math.sqrt(1 - clamp(Math.hypot(B.vx, B.vy) / 0.25, 0, 1));
+  B.x += (B.vx + B.cx + B.lx * att) * h;
+  B.y += (B.vy + B.cy + B.ly * att) * h;
 
   const speed = Math.hypot(B.vx, B.vy);
   B.bob = 0.1 * Math.sin(t * 1.9 + B.y * 0.05);
-  B.heel += ((B.side * sailF * 0.5) + clamp(B.yaw * vf * 0.35, -0.5, 0.5) - B.heel) * Math.min(1, dt * 2.6);
+  B.heel += ((B.side * sailEff * 0.5) + clamp(B.yaw * vf * 0.35, -0.5, 0.5) - B.heel) * Math.min(1, dt * 2.6);
 
   /* --------------------------- sillage --------------------------------- */
   if (speed > 0.25) {
@@ -255,11 +284,6 @@ function updateBoat(dt, t) {
     bounceOut();
     return;
   }
-  // la coque abîmée prend l'eau : bulles derrière le bateau
-  if (B.hull < HULL_MAX) {
-    B.leak += dt;
-    if (B.leak > 0.35) { B.leak = 0; spawnRipple(B.x - Math.cos(B.h) * 3, B.y - Math.sin(B.h) * 3, 0.3); }
-  }
 
   B.scrapeCd -= dt;
   if (B.clearance < CFG.SCRAPE && speed > 0.5 && B.scrapeCd <= 0) {
@@ -271,7 +295,7 @@ function updateBoat(dt, t) {
   /* --------------------------- mouillage -------------------------------- */
   B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
   B.warnCd -= dt;
-    if (B.inAnch && Input.anchor) {
+  if (B.inAnch && Input.anchor) {
     if (speed > 0.9) {
       B.anchoring = 0;
       if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
