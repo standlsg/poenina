@@ -271,14 +271,18 @@ function updateBoat(dt, t) {
   /* --------------------------- mouillage -------------------------------- */
   B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
   B.warnCd -= dt;
-  if (B.inAnch && Input.anchor) {
+    if (B.inAnch && Input.anchor) {
     if (speed > 0.9) {
       B.anchoring = 0;
       if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
+    } else if (B.sailUp > 0.15 && B.twa < 55) {
+      B.anchoring = 0;
+      if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("FACE AU VENT — ABATS DANS LE CONE POUR MOUILLER", 1.6); Snd.sBeep(false); }
     } else {
       B.anchoring += dt;
       if (Math.random() < dt * 12) Snd.sChain();
       if (B.anchoring > 1.6) { B.anchored = true; Game.win(); }
     }
+  } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
   } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
 }
