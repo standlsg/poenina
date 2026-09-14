@@ -66,9 +66,9 @@ function drawWindRose(cx, cy, r) {
   // secteur mort : plein écran de 40° de part et d'autre du vent
   ctx.fillStyle = "rgba(255,110,100,0.2)";
   ctx.beginPath(); ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, r, -wa - 40 * D2R, -wa + 40 * D2R); ctx.closePath(); ctx.fill();
+  ctx.arc(cx, cy, r, -wa - 55 * D2R, -wa + 55 * D2R); ctx.closePath(); ctx.fill();
   ctx.strokeStyle = "rgba(255,130,110,0.5)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(cx, cy, r, -wa - 40 * D2R, -wa + 40 * D2R); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, r, -wa - 55 * D2R, -wa + 55 * D2R); ctx.stroke();
   ctx.strokeStyle = "rgba(160,214,228,0.4)";
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke();
   for (let i = 0; i < 8; i++) {
