@@ -324,54 +324,63 @@ function drawFauna(t) {
     else if (f.kind === "requin") {
       /* requin pointe-noire : museau pointu, fentes branchiales, extrémités
          de nageoires noires — c'est sa signature.                        */
-      /* Battement latéral, correct pour un poisson : la caudale reste dans
-         le plan vertical et balaie de gauche à droite. Amplitude franche,
-         le corps sinue nettement.                                        */
+      /* Silhouette FINE et effilée, gris terne : rien à voir avec le bleu
+         et les rondeurs du dauphin. Museau pointu, corps deux fois moins
+         épais que long-dauphin, pédoncule étroit.
+         La caudale est une nageoire VERTICALE : de dessus on n'en voit que
+         l'épaisseur, donc UNE SEULE lame, longue et mince. Pas de fourche :
+         les deux lobes sont superposés, ils se projettent au même endroit.
+         Elle balaie latéralement et se galbe en S pendant la course.      */
       const tail = Math.sin(f.ph) * 1.15;
-      const body = tn([136, 150, 168]);
-      // pectorales derrière le corps
-      ctx.fillStyle = tn([120, 134, 152]);
-      for (const s of [1, -1]) { leaf(ctx, 0.85, s * 0.55, -0.45, s * 1.65, 0.2); ctx.fill(); ctx.stroke(); }
+      const cw = 0.15 + 0.09 * Math.abs(Math.sin(f.ph));   // épaisseur apparente
+      const body = tn([142, 149, 152]);
+      // pectorales, en faux, derrière le corps
+      ctx.fillStyle = tn([126, 133, 137]);
+      for (const s of [1, -1]) { leaf(ctx, 0.8, s * 0.4, -0.5, s * 1.5, 0.17); ctx.fill(); ctx.stroke(); }
+      // lame caudale, dessinée avant le corps : le raccord passe dessous
+      ctx.beginPath();
+      ctx.moveTo(-1.8, 0.24);
+      ctx.bezierCurveTo(-2.45, tail * 0.18 + cw, -3.2, tail * 0.68 + cw * 0.7, -3.95, tail);
+      ctx.bezierCurveTo(-3.2, tail * 0.68 - cw * 0.7, -2.45, tail * 0.18 - cw, -1.8, -0.24);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
       // corps
       ctx.fillStyle = body;
       ctx.beginPath();
-      ctx.moveTo(2.9, 0);
-      ctx.bezierCurveTo(2.3, 0.42, 1.2, 0.72, 0.1, 0.7);
-      ctx.bezierCurveTo(-0.9, 0.66, -1.6, 0.44, -2.05, 0.26);
-           ctx.lineTo(-2.7, tail * 0.15);                     // pedicule etroit
-      ctx.quadraticCurveTo(-2.95, tail * 0.5, -3.45, tail + 0.42);  // caudale verticale, etroite
-      ctx.quadraticCurveTo(-2.75, tail * 0.2, -3.25, tail - 0.42);
-      ctx.quadraticCurveTo(-2.9, -tail * 0.5, -2.7, -tail * 0.15);
-      ctx.lineTo(-2.05, -0.26);
-      ctx.bezierCurveTo(-1.6, -0.44, -0.9, -0.66, 0.1, -0.7);
-      ctx.bezierCurveTo(1.2, -0.72, 2.3, -0.42, 2.9, 0);
+      ctx.moveTo(3.15, 0);                                 // museau pointu
+      ctx.bezierCurveTo(2.45, 0.28, 1.5, 0.5, 0.4, 0.5);
+      ctx.bezierCurveTo(-0.7, 0.48, -1.5, 0.3, -2.0, 0.15);
+      ctx.quadraticCurveTo(-2.22, 0, -2.0, -0.15);         // pédoncule étroit
+      ctx.bezierCurveTo(-1.5, -0.3, -0.7, -0.48, 0.4, -0.5);
+      ctx.bezierCurveTo(1.5, -0.5, 2.45, -0.28, 3.15, 0);
       ctx.closePath(); ctx.fill(); ctx.stroke();
       // flanc plus clair
       ctx.save();
-      ctx.beginPath(); ctx.ellipse(0.2, 0, 2.2, 0.68, 0, 0, TAU); ctx.clip();
-      ctx.fillStyle = tn([188, 200, 212]);
-      ctx.beginPath(); ctx.ellipse(0.2, 0.42, 2.0, 0.3, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0.3, 0, 2.5, 0.5, 0, 0, TAU); ctx.clip();
+      ctx.fillStyle = tn([180, 188, 191]);
+      ctx.beginPath(); ctx.ellipse(0.3, 0.28, 2.2, 0.15, 0, 0, TAU); ctx.fill();
       ctx.restore();
       // fentes branchiales
       if (vis > 0.5) {
         ctx.strokeStyle = rgba(P.line, 0.3 * vis); ctx.lineWidth = lw * 0.6;
         ctx.beginPath();
         for (let k = 0; k < 4; k++) {
-          ctx.moveTo(1.35 - k * 0.2, 0.18); ctx.lineTo(1.28 - k * 0.2, 0.5);
+          ctx.moveTo(1.4 - k * 0.19, 0.13); ctx.lineTo(1.33 - k * 0.19, 0.37);
         }
         ctx.stroke();
       }
-      // dorsale + petite seconde dorsale
-      ctx.fillStyle = body;
-      leaf(ctx, 0.55, 0, -0.85, 0, 0.42); ctx.fill(); ctx.stroke();
-      leaf(ctx, -1.35, 0, -1.85, 0, 0.16); ctx.fill(); ctx.stroke();
-      // pointes noires
+      /* Dorsales verticales : de dessus, étroites — mais dans la teinte
+         sombre des nageoires, sinon elles disparaissent dans le dos et le
+         requin perd sa silhouette la plus reconnaissable.                */
+      ctx.fillStyle = tn([120, 128, 132]);
+      leaf(ctx, 0.75, 0, -0.85, 0, 0.32); ctx.fill(); ctx.stroke();
+      leaf(ctx, -1.3, 0, -1.78, 0, 0.14); ctx.fill(); ctx.stroke();
+      // pointes noires — la signature du pointe-noire
       ctx.fillStyle = rgba(mixRGB(wc, [26, 32, 44], Math.max(vis, 0.6)), 1);
-      ctx.beginPath(); ctx.arc(-0.72, 0, 0.17, 0, TAU); ctx.fill();
-      ctx.beginPath(); ctx.arc(-3.35, tail + 0.42, 0.16, 0, TAU); ctx.fill();
-      for (const s of [1, -1]) { ctx.beginPath(); ctx.arc(-0.42, s * 1.55, 0.14, 0, TAU); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(-0.68, 0, 0.15, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(-3.82, tail * 0.95, 0.14, 0, TAU); ctx.fill();
+      for (const s of [1, -1]) { ctx.beginPath(); ctx.arc(-0.46, s * 1.4, 0.13, 0, TAU); ctx.fill(); }
       ctx.fillStyle = rgba(P.line, 0.7 * vis);
-      ctx.beginPath(); ctx.arc(2.05, 0.33, 0.11, 0, TAU); ctx.arc(2.05, -0.33, 0.11, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(2.2, 0.24, 0.1, 0, TAU); ctx.arc(2.2, -0.24, 0.1, 0, TAU); ctx.fill();
     }
 
     else if (f.kind === "dauphin") {
@@ -381,20 +390,31 @@ function drawFauna(t) {
          caudal : large quand la queue est à plat, fine quand elle monte ou
          descend et qu'on la voit par la tranche. Deux pulsations par cycle
          (plat - tranche - plat - tranche), d'où la valeur absolue.       */
-      const fl = 1.55 * (0.15 + 0.85 * Math.abs(Math.cos(f.ph))); // demi-envergure : 0,23 (tranche) → 1,55 (plat)
+      const fl = 1.45 * (0.16 + 0.84 * Math.abs(Math.cos(f.ph))); // demi-envergure : 0,23 (tranche) → 1,45 (plat)
       const w = jumping ? 1 : vis;
       const dk = c => jumping ? rgbStr(c) : tn(c);
       ctx.fillStyle = dk([128, 148, 180]);
       for (const s of [1, -1]) { leaf(ctx, 0.7, s * 0.42, -0.35, s * 1.45, 0.18); ctx.fill(); ctx.stroke(); }
+      /* Caudale dessinée à part, avant le corps : un vrai croissant. Bord
+         d'attaque bombé vers l'avant, pointes effilées REJETÉES VERS
+         L'ARRIÈRE, bord de fuite échancré au milieu. C'est la corde (0,6 →
+         1,5 m d'avant en arrière) qui manquait : sans elle la nageoire
+         n'était qu'une palette plate collée au pédoncule.                */
+      ctx.fillStyle = dk([141, 163, 195]);
+      ctx.beginPath();
+      ctx.moveTo(-2.2, 0.22);
+      ctx.bezierCurveTo(-2.45, fl * 0.46, -3.0, fl * 0.88, -3.75, fl);   // bord d'attaque
+      ctx.quadraticCurveTo(-3.1, fl * 0.34, -2.82, 0);                   // échancrure
+      ctx.quadraticCurveTo(-3.1, -fl * 0.34, -3.75, -fl);
+      ctx.bezierCurveTo(-3.0, -fl * 0.88, -2.45, -fl * 0.46, -2.2, -0.22);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
       ctx.fillStyle = dk([154, 176, 204]);
       ctx.beginPath();
       ctx.moveTo(3.05, 0);                                  // rostre
       ctx.quadraticCurveTo(2.5, 0.16, 2.15, 0.3);
       ctx.bezierCurveTo(1.4, 0.66, 0.2, 0.78, -1.1, 0.58);
-      ctx.lineTo(-2.5, 0.2);
-      ctx.quadraticCurveTo(-3.1, fl * 0.5, -3.15, fl);              // nageoire caudale
-      ctx.quadraticCurveTo(-2.55, 0, -3.15, -fl);
-      ctx.quadraticCurveTo(-3.05, -fl * 0.5, -2.5, -0.2);
+      ctx.lineTo(-2.42, 0.19);
+      ctx.quadraticCurveTo(-2.6, 0, -2.42, -0.19);          // pédoncule
       ctx.lineTo(-1.1, -0.58);
       ctx.bezierCurveTo(0.2, -0.78, 1.4, -0.66, 2.15, -0.3);
       ctx.quadraticCurveTo(2.5, -0.16, 3.05, 0);
