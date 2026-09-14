@@ -198,9 +198,18 @@ function updateBoat(dt, t) {
   /* --------------------- barre : il faut de l'erre --------------------- */
   /* À l'écran l'axe y est inversé : un cap qui croît tourne vers la gauche.
      D'où le signe, pour que D = tribord et Q = bâbord.                   */
-  const rudder = clamp(Math.abs(vf) / 1.5, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
+   const rudder = clamp(Math.abs(vf) / 1.5, 0, 1) * (running && B.thr > 0.05 ? 1.2 : 1);
   const want = -B.steer * 0.72 * rudder * (vf < -0.2 ? -1 : 1);
   B.yaw += (want - B.yaw) * Math.min(1, h * 3.4);
+  /* face au vent sans erre : le bateau loffe vers le travers, porté par la
+     tangente vent+ courant. La direction cible est perpendiculaire au
+     vent (twa = 90°), biaisée par le courant.                        */
+  if (intoWind && Math.abs(vf) < 0.6) {
+    const cwx = Math.cos(L.windFrom + Math.PI / 2), cwy = Math.sin(L.windFrom + Math.PI / 2);
+    const aim = Math.atan2(cwy + B.cy, cwx + B.cx);
+    const diff = angDiff(aim, B.h);
+    B.yaw += clamp(diff, -1, 1) * Math.min(1, h * 1.2);
+  }
   B.h = (B.h + B.yaw * h) % TAU;
 
   /* ------------------- courant + dérive due au vent --------------------
