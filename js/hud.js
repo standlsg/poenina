@@ -99,8 +99,9 @@ function drawWindRose(cx, cy, r) {
   ctx.lineTo(cx + Math.cos(bh) * r * 0.88, cy + Math.sin(bh) * r * 0.88); ctx.stroke();
   ctx.fillStyle = UI.mint;
   ctx.beginPath(); ctx.arc(cx + Math.cos(bh) * r * 0.88, cy + Math.sin(bh) * r * 0.88, 2.4, 0, TAU); ctx.fill();
-  // route fond
-  const gvx = B.vx + B.cx + B.lx, gvy = B.vy + B.cy + B.ly;
+  // route fond : vitesse sur le sol (vitesse eau + courant + dérive vent
+  // atténuée par l'erre), telle qu'elle est réellement appliquée au bateau.
+  const gvx = B.gvx, gvy = B.gvy;
   if (Math.hypot(gvx, gvy) > 0.25) {
     const ga = -Math.atan2(gvy, gvx);
     ctx.strokeStyle = "rgba(255,255,255,0.6)"; ctx.lineWidth = 1;

@@ -132,7 +132,8 @@ function currentAt(x, y, t) {
     if (r2 > a2 * 30) continue;                 // influence jusqu'à ~5 rayons
     if (r2 < a2) r2 = a2;
     const r = Math.sqrt(r2), rx = dx / r, ry = dy / r;
-    const k = a2 / r2 * amp, dot = ux * rx + uy * ry;
+    const ampA = amp * (1 + 0.06 * Math.sin(t * 0.13 + p.x * 0.07 + p.y * 0.05));
+    const k = a2 / r2 * ampA * 1.25, dot = ux * rx + uy * ry;
     cx -= k * (2 * dot * rx - ux);
     cy -= k * (2 * dot * ry - uy);
   }

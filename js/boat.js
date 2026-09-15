@@ -277,6 +277,8 @@ function updateBoat(dt, t) {
   const att = Math.sqrt(1 - clamp(Math.hypot(B.vx, B.vy) / 0.25, 0, 1));
   B.x += (B.vx + B.cx + B.lx * att) * h;
   B.y += (B.vy + B.cy + B.ly * att) * h;
+  B.gvx = B.vx + B.cx + B.lx * att;   // vitesse fond réelle (servit la rose des vents)
+  B.gvy = B.vy + B.cy + B.ly * att;
 
   const speed = Math.hypot(B.vx, B.vy);
   B.bob = 0.1 * Math.sin(t * 1.9 + B.y * 0.05);
