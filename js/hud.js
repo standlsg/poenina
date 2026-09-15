@@ -281,18 +281,25 @@ function drawHUD(t) {
 
   /* --- messages --- */
   let msg = null, mc = UI.gold;
+  const engRun = B.engineOn && B.engineDead === 0 && B.starting <= 0;
   if (B.anchored) {
-    msg = B.inAnch ? "MOUILLAGE VALIDÉ" : "ANCRE POSÉE — RELÂCHE ET RE-APPUYE POUR REMONTER";
+    msg = B.inAnch ? "MOUILLAGE VALIDÉ" : ("ANCRE POSÉE — RELÂCHE A ET RE-APPUYE POUR REMONTER"
+                   + (engRun ? "" : " (MOTEUR REQUIS)"));
     mc = B.inAnch ? UI.mint : UI.dim;
   } else if (Input.anchor || B.anchoring > 0) {
-    const spd = Math.hypot(B.vx, B.vy);
-    if (spd > 0.9) {
-      msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)";
-      mc = "rgb(255,175,140)";
+    if (!engRun) {
+      msg = "MOTEUR REQUIS POUR MOUILLER — DÉMARRE LE MOTEUR";
+      mc = UI.warn;
     } else {
-      msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
-                     : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (TEMPORAIRE)");
-      mc = B.inAnch ? UI.mint : UI.dim;
+      const spd = Math.hypot(B.vx, B.vy);
+      if (spd > 0.9) {
+        msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)";
+        mc = "rgb(255,175,140)";
+      } else {
+        msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
+                       : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (TEMPORAIRE)");
+        mc = B.inAnch ? UI.mint : UI.dim;
+      }
     }
     if (B.anchoring > 0) {
       bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);

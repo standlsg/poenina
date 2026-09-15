@@ -398,17 +398,26 @@ function updateBoat(dt, t) {
   // ou laisser le moteur refroidir.
   B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
   B.warnCd -= dt;
+  // monter ou descendre la chaine requiert le moteur allume.
+  const engRun = B.engineOn && B.engineDead === 0 && B.starting <= 0;
   if (B.anchored) {
     // ancre posee : il faut avoir rel\u00e2ch\u00e9 A puis le rappuyer pour
     // remonter (evite que le maintien qui a mouill\u00e9 ne d\u00e9croche aussit\u00f4t).
     if (!Input.anchor) B.anchorReady = true;
     else if (B.anchorReady) {
-      B.anchored = false; B.anchoring = 0; B.anchorReady = false;
-      Game.flash("L'ANCRE EST REMONT\u00c9E", 1.5); Snd.sChain();
+      if (!engRun) {
+        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR REQUIS POUR REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
+      } else {
+        B.anchored = false; B.anchoring = 0; B.anchorReady = false;
+        Game.flash("L'ANCRE EST REMONT\u00c9E", 1.5); Snd.sChain();
+      }
     }
   } else if (Input.anchor) {
     B.anchorReady = false;
-    if (speed > 0.514) {  // 1 kt : on mouille \u00e0 l'arr\u00eat
+    if (!engRun) {
+      B.anchoring = 0;
+      if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR REQUIS POUR MOUILLER", 1.6); Snd.sBeep(false); }
+    } else if (speed > 0.514) {  // 1 kt : on mouille \u00e0 l'arr\u00eat
       B.anchoring = 0;
       if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
     } else {
