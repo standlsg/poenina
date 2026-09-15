@@ -68,7 +68,7 @@ function drawCurrents() {
   ctx.lineCap = "round";
   for (const p of curP) {
     const m = clamp(p.mag / 0.75, 0, 1);
-    if (m < 0.07) continue;
+    if (m < 0.04) continue;
     const a = clamp(p.a, 0, 1);
     ctx.strokeStyle = rgba(P.foam, (0.14 + 0.4 * m) * a);
     ctx.lineWidth = 0.9 + m * 1.6;
