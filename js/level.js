@@ -31,7 +31,7 @@ function levelSpec(n) {
        baisse (chenal étroit, plus de patates, vent dur, dérive) : mesuré
        3,7 m/s au niveau 1 contre 3,2 m/s au niveau 6.                  */
     night: n >= CFG.MAXLEVEL,
-    dayLength: len * (0.40 + 0.021 * (n - 1)),
+    dayLength: len * (0.40 + 0.021 * (n - 1)) * 1.2,
     spineAmp: 0.16 + 0.055 * n
   };
 }
