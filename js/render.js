@@ -1054,8 +1054,8 @@ function applyLight() {
     const r0 = lerp(190, 8, nt), r1 = lerp(520, 24, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(5,11,30,0)");
-    g.addColorStop(0.5, "rgba(4,8,24," + (0.7 * nt) + ")");
-    g.addColorStop(1, "rgba(3,6,20," + (0.99 * nt) + ")");
+    g.addColorStop(0.4, "rgba(4,8,22," + (0.8 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,16," + (0.997 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1111,17 +1111,13 @@ function drawNavLights() {
   ctx.lineTo(5.6 + coneR, coneR * coneHalf);
   ctx.closePath();
   const cg = ctx.createLinearGradient(5.6, 0, 5.6 + coneR, 0);
-  cg.addColorStop(0, "rgba(255,236,184," + (0.34 * a) + ")");
-  cg.addColorStop(0.6, "rgba(255,236,184," + (0.14 * a) + ")");
-  cg.addColorStop(1, "rgba(255,236,184,0)");
+  cg.addColorStop(0, "rgba(255,255,250," + (0.38 * a) + ")");
+  cg.addColorStop(0.6, "rgba(255,255,250," + (0.16 * a) + ")");
+  cg.addColorStop(1, "rgba(255,255,250,0)");
   ctx.fillStyle = cg;
   ctx.fill();
-  // restaure une partie de la couleur/saturation dans le cône (la nuit
-  // appliqueLight a désaturé l'écran) : composite 'color' avec une teinte
-  // chaude, moitié du plein jour.
-  ctx.globalCompositeOperation = "color";
-  ctx.fillStyle = "rgba(255,238,200," + (0.45 * a) + ")";
-  ctx.fill();
+  // lumière blanche du projecteur : 'lighter' ajoute clarté + restaure un
+  // peu de couleur dans le cône sans teinte jaune.
   ctx.restore();
   ctx.restore();
 }
