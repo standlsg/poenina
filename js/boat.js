@@ -379,7 +379,7 @@ function updateBoat(dt, t) {
    *  3) propulsion moteur (B.thr > seuil, running) : continue dans sa
    *     direction jusqu'à tendre la chaîne, s'immobilise chaîne tendue sous
    *     la coque, MAIS ne dérive pas et n'a pas le statut "arrêté".
-   * Victoire : ancre dans la zone de mouillage ET statut "bateau arrêté". */
+   * Victoire : ancre posée au fond dans la zone de mouillage. */
   B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
   B.warnCd -= dt;
   // moteur allumé (pas en panne, démarrage terminé) requis pour le treuil.
@@ -433,7 +433,8 @@ function updateBoat(dt, t) {
       B.anchored = true; B.anchoring = 0;
       B.anchorReady = false;   // A encore enfoncée : ne pas remonter tout de suite
       Snd.sAnchorSet();
-      if (B.inAnch) Game.flash("ANCRE POSÉE DANS LE MOUILLAGE — ARRÊTE-TOI", 3);
+      const anchInZone = Math.hypot(B.anchorX - L.anch.x, B.anchorY - L.anch.y) < L.anch.r;
+      if (anchInZone) { Game.flash("ANCRE POSÉE DANS LE MOUILLAGE — NIVEAU RÉUSSI", 3); Game.win(); }
       else Game.flash("ANCRE POSÉE — RELÂCHE A PUIS MAINTIENS POUR REMONTER", 3);
     }
   } else {
@@ -527,7 +528,6 @@ function updateBoat(dt, t) {
     const vm = Math.hypot(B.vx, B.vy);
     const chainTaut = tautNow || cd >= B.chainR - 0.5;
     B.anchoredStop = !motProp && vm < 0.13 && chainTaut && B.anchored;
-    if (B.anchoredStop && B.inAnch) Game.win();
   } else {
     B.anchoredStop = false;
   }
