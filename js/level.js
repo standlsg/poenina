@@ -15,7 +15,7 @@ function levelSpec(n) {
     patates: Math.round(len * width * [0, 6.3, 7.5, 8.7, 9.9, 11.0, 9.5][n] / 10000),
     sandPatches: Math.round((6 + 3 * n) * 0.7),
     clearance: Math.max(10.5, 16.5 - (n - 1)),
-    baseCur: 0.11 + 0.042 * n,
+    baseCur: n <= 1 ? 0.16 : 0.22 + 0.085 * (n - 1),
     /* windPow : la force du vent telle qu'elle agit sur la voile et sur le
        fardage (calée sur 12). windKn : ce qu'affiche l'anémomètre, moitié
        moins — les valeurs précédentes n'étaient pas crédibles en lagon.  */
