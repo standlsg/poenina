@@ -358,6 +358,9 @@ function updateBoat(dt, t) {
     if (speed > 0.514) {  // 1 kt : on mouille a l'arret dans le cone
       B.anchoring = 0;
       if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
+    } else if (B.twa >= 55) {  // hors du cone : on ne mouille que face au vent
+      B.anchoring = 0;
+      if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("METS-TOI FACE AU VENT DANS LE CONE POUR MOUILLER", 1.6); Snd.sBeep(false); }
     } else {
       B.anchoring += dt;
       if (Math.random() < dt * 12) Snd.sChain();
