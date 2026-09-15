@@ -1046,14 +1046,16 @@ function applyLight() {
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
   }
-  /* …et la vue ne porte plus qu'autour du bateau */
+  /* …et la vue ne porte plus qu'autour du bateau. La nuit, l'obscurité
+     vient très près : seul le cockpit (halo chaud, dessiné après) et le
+     projecteur avant percent le noir. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    const r0 = lerp(190, 46, nt), r1 = lerp(520, 168, nt);
+    const r0 = lerp(190, 8, nt), r1 = lerp(520, 24, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(5,11,30,0)");
-    g.addColorStop(0.55, "rgba(5,11,30," + (0.5 * nt) + ")");
-    g.addColorStop(1, "rgba(4,9,26," + (0.9 * nt) + ")");
+    g.addColorStop(0.5, "rgba(5,11,30," + (0.6 * nt) + ")");
+    g.addColorStop(1, "rgba(4,9,26," + (0.94 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1073,12 +1075,15 @@ function drawNavLights() {
   ctx.translate(sX(B.x), sY(B.y));
   ctx.rotate(-B.h);
   ctx.scale(CFG.K, CFG.K);
-  // halo chaud du pont, qui éclaire juste autour
+  // halo chaud du cockpit : composite 'lighter' pour percer le noir
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
   const hg = ctx.createRadialGradient(0, 0, 1, 0, 0, 13);
-  hg.addColorStop(0, "rgba(255,216,146," + (0.2 * a) + ")");
+  hg.addColorStop(0, "rgba(255,216,146," + (0.26 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
   ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fill();
+  ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
     g.addColorStop(0, col.replace("A", 0.95 * a));
