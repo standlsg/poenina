@@ -281,7 +281,33 @@ function drawHUD(t) {
 
   /* --- messages --- */
   let msg = null, mc = UI.gold;
-  if (B.engineDead > 0 && B.sailUp < 0.5) {
+  const engRun = B.engineOn && B.engineDead === 0;
+  if (B.anchoredStop && B.inAnch) {
+    msg = "MOUILLAGE VALIDÉ"; mc = UI.mint;
+  } else if (B.anchored) {
+    if (B.anchoredStop) { msg = "BATEAU ARRÊTÉ — RELÂCHE A ET RE-APPUYE POUR REMONTER"; mc = UI.dim; }
+    else {
+      const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
+      const taut = Math.hypot(cdx, cdy) >= B.chainR - 0.5;
+      msg = taut ? "CHAÎNE TENDUE — RELÂCHE A ET RE-APPUYE POUR REMONTER"
+                 : "SOUS L'ANCRE — RELÂCHE A ET RE-APPUYE POUR REMONTER";
+      msg += engRun ? "" : " (MOTEUR ÉTEINT)";
+      mc = UI.dim;
+    }
+  } else if (Input.anchor || B.anchoring > 0 || B.anchorDrop > 0) {
+    if (!engRun) { msg = "MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER"; mc = UI.warn; }
+    else {
+      const spd = Math.hypot(B.vx, B.vy);
+      if (spd > 0.9) { msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)"; mc = "rgb(255,175,140)"; }
+      else { msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
+                           : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (HORS ZONE)");
+            mc = B.inAnch ? UI.mint : UI.dim; }
+    }
+    if (B.anchoring > 0) {
+      bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);
+      txt("LA CHAÎNE FILE", W / 2, H - 90, 7, UI.gold, "center");
+    }
+  } else if (B.engineDead > 0 && B.sailUp < 0.5) {
     msg = "PAS DE MOTEUR —  ESPACE  POUR ENVOYER LA VOILE"; mc = UI.warn;
   } else if (B.sailUp > 0.5 && B.luff > 0.5) {
     msg = "TU ES DANS LE VENT — ABATS, TIRE UN BORD !"; mc = "rgb(255,190,150)";

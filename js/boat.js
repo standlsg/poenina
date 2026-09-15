@@ -17,7 +17,12 @@ const B = {
   heel: 0, bob: 0,
   alive: true, dead: null, sinking: 0, stuck: 0,
   hull: HULL_MAX, invuln: 0, hitFlash: 0, leak: 0,
-  clearance: 9, scrapeCd: 0
+  clearance: 9, scrapeCd: 0,
+  /* mouillage : ancre (point fixe au fond), chaîne (longueur max),
+     descente animée (anchorDrop 0->1), relèvement prêt (anchorReady),
+     statut arrêté (anchoredStop), cd anti-spam messages (warnCd). */
+  anchorX: 0, anchorY: 0, chainR: 8, anchoring: 0, anchorDrop: 0,
+  anchorReady: false, anchored: false, anchoredStop: false, inAnch: false, warnCd: 0
 };
 
 /* polaire de la grand-voile : angle au vent réel (deg) -> rendement.
@@ -46,6 +51,8 @@ function resetBoat() {
   B.alive = true; B.dead = null; B.sinking = 0; B.stuck = 0;
   B.hull = HULL_MAX; B.invuln = 0; B.hitFlash = 0; B.leak = 0;
   B.clearance = 9; B.scrapeCd = 0; B.creakCd = 0;
+  B.anchorX = 0; B.anchorY = 0; B.anchoring = 0; B.anchorDrop = 0;
+  B.anchorReady = false; B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
   L.trail.length = 0;
 }
 
@@ -273,10 +280,14 @@ function updateBoat(dt, t) {
   /* Application de la position : courant toujours plein, dérive vent
      atténuée par √(1 − erre/vfMax), vfMax = 0,25 m/s (≈ 0,5 kt).     */
   const att = Math.sqrt(1 - clamp(Math.hypot(B.vx, B.vy) / 0.25, 0, 1));
-  B.x += (B.vx + B.cx + B.lx * att) * h;
-  B.y += (B.vy + B.cy + B.ly * att) * h;
   B.gvx = B.vx + B.cx + B.lx * att;   // vitesse fond réelle (servit la rose des vents)
   B.gvy = B.vy + B.cy + B.ly * att;
+  // sous ancre, le déplacement est géré par la dynamique mouillage (fin de
+  // fonction) ; ici on ne fait que tenir la route fond à jour.
+  if (!B.anchored) {
+    B.x += B.gvx * h;
+    B.y += B.gvy * h;
+  }
 
   const speed = Math.hypot(B.vx, B.vy);
   B.bob = 0.1 * Math.sin(t * 1.9 + B.y * 0.05);
@@ -351,4 +362,129 @@ function updateBoat(dt, t) {
     for (let i = 0; i < 7; i++) spawnSpray(B.x, B.y, 1.4);
   }
 
+
+  /* =========================== mouillage =============================== *
+   * Ancre (point fixe au fond) + chaîne (longueur max chainR). Trois
+   * comportements du bateau sous l'ancre selon sa propulsion :
+   *  1) immobile sans propulsion : dérive (travers à la dérive) jusqu'à
+   *     tendre la chaîne, s'aligne proue-vers-l'ancre = "bateau arrêté".
+   *  2) erre ou voile : continue sur son erre jusqu'à tendre la chaîne sous
+   *     la coque, s'arrête, puis passe en 1). Sous voile les voiles fasèient,
+   *     le statut devient "bateau arrêté".
+   *  3) propulsion moteur (B.thr > seuil, running) : continue dans sa
+   *     direction jusqu'à tendre la chaîne, s'immobilise chaîne tendue sous
+   *     la coque, MAIS ne dérive pas et n'a pas le statut "arrêté".
+   * Victoire : ancre dans la zone de mouillage ET statut "bateau arrêté". */
+  B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
+  B.warnCd -= dt;
+  // moteur allumé (pas en panne, démarrage terminé) requis pour le treuil.
+  const engRun = B.engineOn && B.engineDead === 0;
+  // propulsion moteur effective : moteur tournant ET des gaz.
+  const motProp = running && B.thr > 0.05;
+
+  if (!B.anchored) {
+    // descente / relèvement : tant qu'on n'est pas ancré, A gère le jet.
+    if (B.anchorDrop > 0 && B.anchorDrop < 1) {
+      // l'ancre descend vers le fond (animation), puis l'ancre croche.
+      B.anchorDrop = Math.min(1, B.anchorDrop + dt / 1.1);
+      if (Math.random() < dt * 9) Snd.sChain();
+      if (B.anchorDrop >= 1) {
+        B.anchored = true; B.anchoring = 0; B.anchorReady = false;
+        Snd.sAnchorSet();
+        if (B.inAnch) Game.flash("ANCRE POSÉE DANS LE MOUILLAGE — ARRÊTE-TOI", 3);
+        else Game.flash("ANCRE POSÉE — RELÂCHE A ET RE-APPUYE POUR REMONTER", 3);
+      }
+    } else if (Input.anchor) {
+      B.anchorReady = false;
+      if (!engRun) {
+        B.anchoring = 0;
+        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER", 1.6); Snd.sBeep(false); }
+      } else if (speed > 0.514) {  // 1 kt : on jette l'ancre à l'arrêt
+        B.anchoring = 0;
+        if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
+      } else {
+        B.anchoring += dt;
+        if (Math.random() < dt * 12) Snd.sChain();
+        if (B.anchoring > 1.6) {
+          // l'ancre part de la proue, à la position courante du bateau.
+          B.anchorX = B.x + Math.cos(B.h) * 5.6;
+          B.anchorY = B.y + Math.sin(B.h) * 5.6;
+          B.anchorDrop = 0.001;   // démarre l'animation de descente
+          B.anchoring = 0;
+        }
+      }
+    } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
+  } else {
+    // ancre posée : relâcher A puis le rappuyer (moteur allumé) = remonter.
+    if (!Input.anchor) B.anchorReady = true;
+    else if (B.anchorReady) {
+      if (!engRun) {
+        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
+      } else {
+        B.anchored = false; B.anchoring = 0; B.anchorReady = false;
+        B.anchorDrop = 0; B.anchoredStop = false;
+        Game.flash("L'ANCRE EST REMONTÉE", 1.5); Snd.sChain();
+      }
+    }
+  }
+
+  // --- dynamique sous l'ancre (remplace le déplacement normal) ---
+  if (B.anchored) {
+    const c = currentAt(B.x, B.y, t);
+    const wx = Math.cos(L.windFrom), wy = Math.sin(L.windFrom);
+    const lee = 0.40 * (L.windPow / 12) * (1 + B.sailUp * 0.5);
+    // vitesse imposée par courant + dérive vent (pleine, pas d'atténuation)
+    let dvx = c[0] - wx * lee, dvy = c[1] - wy * lee;
+    if (motProp) {
+      // état 3 — propulsion moteur : on garde la vitesse propre du bateau
+      // (calculée par le flux moteur), on n'ajoute PAS la dérive. Le bateau
+      // continue dans sa direction jusqu'à tendre la chaîne.
+      B.x += B.vx * dt; B.y += B.vy * dt;
+      B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
+    } else if (hasProp || speed > 0.13) {
+      // état 2 — erre ou voile : continue sur son erre (vitesse propre),
+      // pas de dérive ajoutée, jusqu'à tendre la chaîne.
+      B.x += B.vx * dt; B.y += B.vy * dt;
+      // l'erre décroît (traînée + pas de propulsion efficace sous ancre)
+      B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
+    } else {
+      // état 1 — immobile sans propulsion : dérive travers à la dérive.
+      B.x += dvx * dt; B.y += dvy * dt;
+      B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
+    }
+
+    // blocage par la chaîne : rayon max depuis l'ancre. On retient le
+    // centre du bateau à chainR de l'ancre.
+    const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
+    const cd = Math.hypot(cdx, cdy);
+    if (cd > B.chainR) {
+      const k = B.chainR / cd;
+      B.x = B.anchorX + cdx * k;
+      B.y = B.anchorY + cdy * k;
+      // annule la composante sortante de la vitesse propre
+      if (cd > 0.01) {
+        const nx = cdx / cd, ny = cdy / cd;
+        const out = B.vx * nx + B.vy * ny;
+        if (out > 0) { B.vx -= out * nx; B.vy -= out * ny; }
+      }
+    }
+
+    // orientation : proue vers l'ancre (amont de la dérive). Sous moteur
+    // (état 3) on garde le cap du bateau ; sans propulsion on s'aligne
+    // face au vent+courant comme un bateau mouillé.
+    if (!motProp && Math.hypot(dvx, dvy) > 0.05) {
+      const targetH = Math.atan2(-dvy, -dvx);   // proue vers l'amont
+      B.h += angDiff(targetH, B.h) * Math.min(1, dt * 2.5);
+    }
+    B.bob = 0.1 * Math.sin(t * 1.9);
+
+    // statut "bateau arrêté" : immobile, sans propulsion moteur, chaîne
+    // tendue (ou quasi), ancré. Sous voile lâchée/affalée aussi.
+    const vm = Math.hypot(B.vx, B.vy);
+    const chainTaut = cd >= B.chainR - 0.5;
+    B.anchoredStop = !motProp && vm < 0.13 && chainTaut && B.anchored;
+    if (B.anchoredStop && B.inAnch) Game.win();
+  } else {
+    B.anchoredStop = false;
+  }
 }
