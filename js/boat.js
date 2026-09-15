@@ -425,12 +425,10 @@ function updateBoat(dt, t) {
       else Game.flash("ANCRE POSÉE — MAINTIENS A POUR REMONTER", 3);
     }
   } else {
-    /* ancre levée : MAINTENIR A (moteur allumé, < 1 kt) jette l'ancre. */
+    /* ancre levée : MAINTENIR A (< 1 kt) jette l'ancre. Pas de condition
+       moteur pour jeter — seulement pour remonter (treuil mécanique). */
     if (Input.anchor) {
-      if (!engRun) {
-        B.anchoring = 0;
-        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER", 1.6); Snd.sBeep(false); }
-      } else if (speed > 0.514) {  // 1 kt : on jette l'ancre à l'arrêt
+      if (speed > 0.514) {  // 1 kt : on jette l'ancre à l'arrêt
         B.anchoring = 0;
         if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
       } else {

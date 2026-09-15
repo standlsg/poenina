@@ -298,14 +298,11 @@ function drawHUD(t) {
       mc = UI.dim;
     }
   } else if (Input.anchor || B.anchoring > 0 || B.anchorDrop > 0) {
-    if (!engRun) { msg = "MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER"; mc = UI.warn; }
-    else {
-      const spd = Math.hypot(B.vx, B.vy);
-      if (spd > 0.9) { msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)"; mc = "rgb(255,175,140)"; }
-      else { msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
-                           : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (HORS ZONE)");
-            mc = B.inAnch ? UI.mint : UI.dim; }
-    }
+    const spd = Math.hypot(B.vx, B.vy);
+    if (spd > 0.9) { msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)"; mc = "rgb(255,175,140)"; }
+    else { msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
+                         : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (HORS ZONE)");
+          mc = B.inAnch ? UI.mint : UI.dim; }
     if (B.anchoring > 0) {
       bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);
       txt("LA CHAÎNE FILE", W / 2, H - 90, 7, UI.gold, "center");
