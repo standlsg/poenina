@@ -12,7 +12,7 @@ function levelSpec(n) {
   return {
     n, len, width,
     // densités, donc elles suivent la longueur sans qu'on y touche
-    patates: Math.round(len * width * [0, 5.5, 7.5, 9.5, 11.5, 13.5, 11][n] / 10000),
+    patates: Math.round(len * width * [0, 5.5, 6.7, 7.9, 9.1, 10.3, 9.0][n] / 10000),
     sandPatches: Math.round((6 + 3 * n) * 0.7),
     clearance: Math.max(10.5, 16.5 - (n - 1)),
     baseCur: 0.11 + 0.042 * n,
