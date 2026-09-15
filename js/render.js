@@ -1298,13 +1298,15 @@ function drawRain(t) {
   g.addColorStop(0.5, "rgba(40,52,66," + (0.34 * a) + ")");
   g.addColorStop(1, "rgba(40,52,66,0)");
   ctx.fillStyle = g; ctx.fillRect(0, top, W, h);
-  // rides de pluie : traits fins dans l'axe du vent
+  // gouttes de pluie : tombent du haut vers le bas (vertical), avec une
+  // legere derive horizontale due au vent. La bande traverse le lagon
+  // horizontalement (deplacement du voile), mais l'eau tombe verticalement.
   ctx.strokeStyle = "rgba(190,212,228," + (0.32 * a) + ")";
   ctx.lineWidth = 1; ctx.beginPath();
-  const wdx = -Math.cos(L.windFrom), wdy = -Math.sin(L.windFrom) * (W / H);
+  const drift = -Math.cos(L.windFrom) * 1.6;
   for (let i = 0; i < 70; i++) {
-    const x = (i * 53 + t * 140) % W, y = top + ((i * 37) % h);
-    ctx.moveTo(x, y); ctx.lineTo(x + wdx * 4, y + wdy * 4);
+    const x = (i * 53) % W, y = top + ((i * 37 + t * 220) % h);
+    ctx.moveTo(x, y); ctx.lineTo(x + drift, y + 7);
   }
   ctx.stroke();
 }
