@@ -25,7 +25,7 @@ const B = {
   anchorX: 0, anchorY: 0, chainR: 8, anchoring: 0, anchorDrop: 0,
   anchorReady: true,
   anchored: false, anchoredStop: false, inAnch: false, warnCd: 0,
-  anchorRaise: false
+  anchorRaise: false, chainWasTaut: false
 };
 
 /* polaire de la grand-voile : angle au vent réel (deg) -> rendement.
@@ -57,7 +57,7 @@ function resetBoat() {
   B.anchorX = 0; B.anchorY = 0; B.anchoring = 0; B.anchorDrop = 0;
   B.anchorReady = true;
   B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
-  B.anchorRaise = false;
+  B.anchorRaise = false; B.chainWasTaut = false;
   L.trail.length = 0;
 }
 
@@ -401,6 +401,7 @@ function updateBoat(dt, t) {
       if (B.anchorDrop <= 0) {
         B.anchorRaise = false; B.anchorDrop = 0;
         B.anchorReady = false;   // A encore enfoncée : ne pas re-jeter tout de suite
+        B.chainWasTaut = false;
         Game.flash("L'ANCRE EST REMONTÉE", 1.5); Snd.sChain();
       }
     } else {
@@ -436,24 +437,19 @@ function updateBoat(dt, t) {
       else Game.flash("ANCRE POSÉE — RELÂCHE A PUIS MAINTIENS POUR REMONTER", 3);
     }
   } else {
-    /* ancre levée : MAINTENIR A (< 1 kt, A relâchée depuis la remontée)
-       jette l'ancre. Pas de condition moteur pour jeter. A est consommée
-       au lancement effectif du jet (et au terme de la descente). */
+    /* ancre levée : MAINTENIR A jette l'ancre à n'importe quelle vitesse.
+       Pas de condition moteur pour jeter. A est consommée au lancement
+       effectif du jet (et au terme de la descente). */
     if (Input.anchor && B.anchorReady) {
-      if (speed > 0.514) {  // 1 kt : on jette l'ancre à l'arrêt
+      B.anchoring += dt;
+      if (Math.random() < dt * 12) Snd.sChain();
+      if (B.anchoring > 1.6) {
+        B.anchorReady = false;   // consomme : il faudra relâcher A avant la remontée
+        // l'ancre part de la proue, à la position courante du bateau.
+        B.anchorX = B.x + Math.cos(B.h) * 5.6;
+        B.anchorY = B.y + Math.sin(B.h) * 5.6;
+        B.anchorDrop = 0.001;   // démarre l'animation de descente
         B.anchoring = 0;
-        if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
-      } else {
-        B.anchoring += dt;
-        if (Math.random() < dt * 12) Snd.sChain();
-        if (B.anchoring > 1.6) {
-          B.anchorReady = false;   // consomme : il faudra relâcher A avant la remontée
-          // l'ancre part de la proue, à la position courante du bateau.
-          B.anchorX = B.x + Math.cos(B.h) * 5.6;
-          B.anchorY = B.y + Math.sin(B.h) * 5.6;
-          B.anchorDrop = 0.001;   // démarre l'animation de descente
-          B.anchoring = 0;
-        }
       }
     } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
   }
@@ -487,7 +483,25 @@ function updateBoat(dt, t) {
     // centre du bateau à chainR de l'ancre.
     const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
     const cd = Math.hypot(cdx, cdy);
-    if (cd > B.chainR) {
+    const tautNow = cd > B.chainR;
+    // détection du passage tendu : la chaîne vient juste de se tendre.
+    // On arrête le bateau net et, s'il allait vite (≥ 2 nd), on déclenche
+    // un choc (secousse, flash rouge, gouttelettes, son) une seule fois.
+    if (tautNow && !B.chainWasTaut) {
+      const vms = Math.hypot(B.vx, B.vy);
+      // arrêt net de l'erre : on tue l'essentiel de la vitesse propre.
+      B.vx *= 0.08; B.vy *= 0.08;
+      if (vms >= 1.03) {
+        Game.shake(4);
+        B.hitFlash = 1;
+        for (let i = 0; i < 10; i++) spawnSpray(B.x, B.y, 2);
+        Snd.sHit();
+      } else {
+        Snd.sScrape();
+      }
+    }
+    B.chainWasTaut = tautNow;
+    if (tautNow) {
       const k = B.chainR / cd;
       B.x = B.anchorX + cdx * k;
       B.y = B.anchorY + cdy * k;
@@ -511,7 +525,7 @@ function updateBoat(dt, t) {
     // statut "bateau arrêté" : immobile, sans propulsion moteur, chaîne
     // tendue (ou quasi), ancré. Sous voile lâchée/affalée aussi.
     const vm = Math.hypot(B.vx, B.vy);
-    const chainTaut = cd >= B.chainR - 0.5;
+    const chainTaut = tautNow || cd >= B.chainR - 0.5;
     B.anchoredStop = !motProp && vm < 0.13 && chainTaut && B.anchored;
     if (B.anchoredStop && B.inAnch) Game.win();
   } else {
