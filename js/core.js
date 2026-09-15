@@ -129,7 +129,7 @@ const SUNKEY = [
   { t: 0.91, mul: [180, 136, 178], veil: [130, 100, 176], va: 0.24, sky: [130, 96, 160] },
   { t: 1.00, mul: [96, 92, 140], veil: [30, 36, 92], va: 0.40, sky: [40, 46, 92] }
 ];
-const NIGHT_SUN = 0.93;                 // valeur de départ d'un niveau nocturne
+const NIGHT_SUN = 0.96;                 // nuit à 80 % dès le départ du niveau nocturne
 /* 0 en plein jour, 1 en pleine nuit : pilote la désaturation et la portée
    de vue autour du bateau.                                                */
 const nightAmount = () => clamp((L.sun - 0.80) / 0.20, 0, 1);

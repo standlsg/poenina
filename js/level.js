@@ -294,8 +294,8 @@ function buildLevel(n, seedExtra) {
   L.windPow = S.windPow;               // vent effectif (recalculé chaque frame)
   L.windKn = S.windPow / 2;            // anémomètre (suit le vent effectif)
   L.gustPhase = rng() * TAU;           // phase des rafales de transition thermique
-  L.duskFlash = false;                 // repères de transition vent (crépuscule / brise de terre)
-  L.landFlash = false;
+  L.duskFlash = L.night;               // repères de transition vent (déjà passés la nuit)
+  L.landFlash = L.night;
 
   /* ---- décor ---- */
   L.palms = [];
