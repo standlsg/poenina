@@ -462,29 +462,32 @@ function updateBoat(dt, t) {
     const lee = 0.40 * (L.windPow / 12) * (1 + B.sailUp * 0.5);
     // vitesse imposée par courant + dérive vent (pleine, pas d'atténuation)
     let dvx = c[0] - wx * lee, dvy = c[1] - wy * lee;
+    const bowD = 5.6;
     if (motProp) {
       // état 3 — propulsion moteur : on garde la vitesse propre du bateau
       // (calculée par le flux moteur), on n'ajoute PAS la dérive. Le bateau
       // continue dans sa direction jusqu'à tendre la chaîne.
       B.x += B.vx * dt; B.y += B.vy * dt;
-      B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
+      B.vx *= Math.pow(0.85, dt); B.vy *= Math.pow(0.85, dt);
     } else if (hasProp || speed > 0.13) {
       // état 2 — erre ou voile : continue sur son erre (vitesse propre),
       // pas de dérive ajoutée, jusqu'à tendre la chaîne.
       B.x += B.vx * dt; B.y += B.vy * dt;
-      // l'erre décroît (traînée + pas de propulsion efficace sous ancre)
-      B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
+      // l'erre décroît lentement (traînée + pas de propulsion efficace sous ancre)
+      B.vx *= Math.pow(0.85, dt); B.vy *= Math.pow(0.85, dt);
     } else {
       // état 1 — immobile sans propulsion : dérive travers à la dérive.
       B.x += dvx * dt; B.y += dvy * dt;
-      B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
+      B.vx *= Math.pow(0.85, dt); B.vy *= Math.pow(0.85, dt);
     }
 
-    // blocage par la chaîne : rayon max depuis l'ancre. On retient le
-    // centre du bateau à chainR de l'ancre.
-    const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
-    const cd = Math.hypot(cdx, cdy);
-    const tautNow = cd > B.chainR;
+    // blocage par la chaîne : le point d'amure est la PROUE (point d'attache
+    // de la chaîne), pas le centre du bateau. On retient la proue à chainR
+    // de l'ancre ; le reste du bateau pivote autour de la proue.
+    const bdx = (B.x + Math.cos(B.h) * bowD) - B.anchorX;
+    const bdy = (B.y + Math.sin(B.h) * bowD) - B.anchorY;
+    const bd = Math.hypot(bdx, bdy);
+    const tautNow = bd > B.chainR;
     // détection du passage tendu : la chaîne vient juste de se tendre.
     // On arrête le bateau net et, s'il allait vite (≥ 2 nd), on déclenche
     // un choc (secousse, flash rouge, gouttelettes, son) une seule fois.
@@ -503,12 +506,14 @@ function updateBoat(dt, t) {
     }
     B.chainWasTaut = tautNow;
     if (tautNow) {
-      const k = B.chainR / cd;
-      B.x = B.anchorX + cdx * k;
-      B.y = B.anchorY + cdy * k;
+      // ramène la proue sur le cercle ; le centre suit (pivote autour de la proue).
+      const k = B.chainR / bd;
+      const newBowX = B.anchorX + bdx * k, newBowY = B.anchorY + bdy * k;
+      B.x += newBowX - (B.anchorX + bdx);
+      B.y += newBowY - (B.anchorY + bdy);
       // annule la composante sortante de la vitesse propre
-      if (cd > 0.01) {
-        const nx = cdx / cd, ny = cdy / cd;
+      if (bd > 0.01) {
+        const nx = bdx / bd, ny = bdy / bd;
         const out = B.vx * nx + B.vy * ny;
         if (out > 0) { B.vx -= out * nx; B.vy -= out * ny; }
       }
@@ -526,7 +531,7 @@ function updateBoat(dt, t) {
     // statut "bateau arrêté" : immobile, sans propulsion moteur, chaîne
     // tendue (ou quasi), ancré. Sous voile lâchée/affalée aussi.
     const vm = Math.hypot(B.vx, B.vy);
-    const chainTaut = tautNow || cd >= B.chainR - 0.5;
+    const chainTaut = tautNow || bd >= B.chainR - 0.5;
     B.anchoredStop = !motProp && vm < 0.13 && chainTaut && B.anchored;
   } else {
     B.anchoredStop = false;
