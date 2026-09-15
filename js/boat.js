@@ -399,10 +399,11 @@ function updateBoat(dt, t) {
   B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
   B.warnCd -= dt;
   if (B.anchored) {
-    // ancre pos\u00e9e : pour la remonter il faut rel\u00e2cher puis re-appuyer.
+    // ancre posee : il faut avoir rel\u00e2ch\u00e9 A puis le rappuyer pour
+    // remonter (evite que le maintien qui a mouill\u00e9 ne d\u00e9croche aussit\u00f4t).
     if (!Input.anchor) B.anchorReady = true;
     else if (B.anchorReady) {
-      B.anchored = false; B.anchorReady = false; B.anchoring = 0;
+      B.anchored = false; B.anchoring = 0; B.anchorReady = false;
       Game.flash("L'ANCRE EST REMONT\u00c9E", 1.5); Snd.sChain();
     }
   } else if (Input.anchor) {
