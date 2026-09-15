@@ -23,6 +23,7 @@ const B = {
      anchorDrop 1->0), statut arrêté (anchoredStop),
      cd anti-spam messages (warnCd). */
   anchorX: 0, anchorY: 0, chainR: 8, anchoring: 0, anchorDrop: 0,
+  anchorReady: true,
   anchored: false, anchoredStop: false, inAnch: false, warnCd: 0,
   anchorRaise: false
 };
@@ -54,6 +55,7 @@ function resetBoat() {
   B.hull = HULL_MAX; B.invuln = 0; B.hitFlash = 0; B.leak = 0;
   B.clearance = 9; B.scrapeCd = 0; B.creakCd = 0;
   B.anchorX = 0; B.anchorY = 0; B.anchoring = 0; B.anchorDrop = 0;
+  B.anchorReady = true;
   B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
   B.anchorRaise = false;
   L.trail.length = 0;
@@ -385,6 +387,11 @@ function updateBoat(dt, t) {
   // propulsion moteur effective : moteur tournant ET des gaz.
   const motProp = running && B.thr > 0.05;
 
+  /* La touche A est "consommée" après chaque action (jet ou remontée) :
+     il faut la RELÂCHER puis la ré-enfoncer pour déclencher la suivante.
+     anchorReady=true signifie "A a été relâchée, prête pour une action". */
+  if (!Input.anchor) B.anchorReady = true;
+
   /* priorité à la remontée : si l'ancre est en cours de remontée, on
      gère uniquement ça (la descente ne doit pas se battre avec). */
   if (B.anchorRaise) {
@@ -393,6 +400,7 @@ function updateBoat(dt, t) {
       if (Math.random() < dt * 9) Snd.sChain();
       if (B.anchorDrop <= 0) {
         B.anchorRaise = false; B.anchorDrop = 0;
+        B.anchorReady = false;   // A encore enfoncée : ne pas re-jeter tout de suite
         Game.flash("L'ANCRE EST REMONTÉE", 1.5); Snd.sChain();
       }
     } else {
@@ -402,12 +410,14 @@ function updateBoat(dt, t) {
       if (B.anchorDrop > 0.55) { B.anchored = true; B.anchoredStop = false; }
     }
   } else if (B.anchored) {
-    /* ancre posée au fond : MAINTENIR A (moteur allumé) démarre la
-       remontée de la chaîne (animation inverse de la descente). */
-    if (Input.anchor) {
+    /* ancre posée au fond : MAINTENIR A (moteur allumé, A relâchée depuis
+       le jet) démarre la remontée de la chaîne. A est consommée au
+       démarrage effectif de la remontée (pas sur l'échec moteur éteint). */
+    if (Input.anchor && B.anchorReady) {
       if (!engRun) {
         if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
       } else {
+        B.anchorReady = false;   // consomme : il faudra relâcher A avant la prochaine action
         B.anchorRaise = true;
         B.anchored = false; B.anchoredStop = false;
         Game.flash("LA CHAÎNE REMONTE", 2); Snd.sChain();
@@ -420,14 +430,16 @@ function updateBoat(dt, t) {
     if (Math.random() < dt * 9) Snd.sChain();
     if (B.anchorDrop >= 1) {
       B.anchored = true; B.anchoring = 0;
+      B.anchorReady = false;   // A encore enfoncée : ne pas remonter tout de suite
       Snd.sAnchorSet();
       if (B.inAnch) Game.flash("ANCRE POSÉE DANS LE MOUILLAGE — ARRÊTE-TOI", 3);
-      else Game.flash("ANCRE POSÉE — MAINTIENS A POUR REMONTER", 3);
+      else Game.flash("ANCRE POSÉE — RELÂCHE A PUIS MAINTIENS POUR REMONTER", 3);
     }
   } else {
-    /* ancre levée : MAINTENIR A (< 1 kt) jette l'ancre. Pas de condition
-       moteur pour jeter — seulement pour remonter (treuil mécanique). */
-    if (Input.anchor) {
+    /* ancre levée : MAINTENIR A (< 1 kt, A relâchée depuis la remontée)
+       jette l'ancre. Pas de condition moteur pour jeter. A est consommée
+       au lancement effectif du jet (et au terme de la descente). */
+    if (Input.anchor && B.anchorReady) {
       if (speed > 0.514) {  // 1 kt : on jette l'ancre à l'arrêt
         B.anchoring = 0;
         if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
@@ -435,6 +447,7 @@ function updateBoat(dt, t) {
         B.anchoring += dt;
         if (Math.random() < dt * 12) Snd.sChain();
         if (B.anchoring > 1.6) {
+          B.anchorReady = false;   // consomme : il faudra relâcher A avant la remontée
           // l'ancre part de la proue, à la position courante du bateau.
           B.anchorX = B.x + Math.cos(B.h) * 5.6;
           B.anchorY = B.y + Math.sin(B.h) * 5.6;
