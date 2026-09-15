@@ -1095,16 +1095,19 @@ function drawNavLights() {
   // carré éclairé
   ctx.fillStyle = "rgba(255,208,124," + (0.26 * a) + ")";
   rr(ctx, -1.85, -1.9, 3.8, 3.8, 0.7); ctx.fill();
-  // projecteur avant : cône de lumière discret vers l'avant
-  const coneR = 26, coneHalf = 0.42;
+  // projecteur avant : cône de lumière vers l'avant, au-delà du halo de
+  // visibilité nocturne. Composite 'lighter' pour éclairer vraiment le noir.
+  const coneR = 44, coneHalf = 0.40;
   ctx.save();
+  ctx.globalCompositeOperation = "lighter";
   ctx.beginPath();
   ctx.moveTo(5.6, 0);
   ctx.lineTo(5.6 + coneR, -coneR * coneHalf);
   ctx.lineTo(5.6 + coneR, coneR * coneHalf);
   ctx.closePath();
   const cg = ctx.createLinearGradient(5.6, 0, 5.6 + coneR, 0);
-  cg.addColorStop(0, "rgba(255,236,184," + (0.28 * a) + ")");
+  cg.addColorStop(0, "rgba(255,236,184," + (0.34 * a) + ")");
+  cg.addColorStop(0.6, "rgba(255,236,184," + (0.14 * a) + ")");
   cg.addColorStop(1, "rgba(255,236,184,0)");
   ctx.fillStyle = cg;
   ctx.fill();
