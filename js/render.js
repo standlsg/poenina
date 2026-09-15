@@ -1263,26 +1263,26 @@ function drawCrabs(t) {
 /* --------------------------- averses tropicales -------------------------
    Une bande de pluie traverse le lagon dans l'axe du vent : voile gris,
    rides accrues, visibilité réduite. Purement cosmétique, pas de danger. */
-let rain = { active: false, y: 0, next: 40, alpha: 0 };
+let rain = { active: false, x: 0, next: 40, alpha: 0 };
 function updateRain(dt) {
-  // la bande se déplace dans le sens du vent (vers où il souffle)
-  const vy = Math.sin(L.windFrom) * (8 + L.windPow * 0.6);
+  // la bande se deplace lateralement (selon l'axe X, largeur du lagon) dans
+  // le sens du vent : voile vertical circulant gauche->droite ou inverse.
+  const vx = -Math.cos(L.windFrom) * (8 + L.windPow * 0.6);
   if (!rain.active) {
     rain.next -= dt;
     if (rain.next <= 0) {
       rain.active = true;
-      rain.y = vy > 0 ? L.by0 - 30 : L.by1 + 30;
+      rain.x = vx > 0 ? L.bx0 - 30 : L.bx1 + 30;
       rain.alpha = 0;
     }
     return;
   }
-  rain.y += vy * dt;
-  // fondu entrée/sortie
-  const dyB = Math.abs(rain.y - L.by0), dyE = Math.abs(rain.y - L.by1);
-  const near = Math.min(dyB, dyE);
+  rain.x += vx * dt;
+  const dxB = Math.abs(rain.x - L.bx0), dxE = Math.abs(rain.x - L.bx1);
+  const near = Math.min(dxB, dxE);
   rain.alpha = Math.min(1, rain.alpha + dt * 1.5);
   if (near < 30) rain.alpha = Math.max(0, near / 30);
-  if (rain.y < L.by0 - 40 || rain.y > L.by1 + 40) {
+  if (rain.x < L.bx0 - 40 || rain.x > L.bx1 + 40) {
     rain.active = false;
     rain.next = 35 + Math.random() * 45;
     rain.alpha = 0;
@@ -1290,22 +1290,21 @@ function updateRain(dt) {
 }
 function drawRain(t) {
   if (!rain.active || rain.alpha <= 0.01) return;
-  const py = sY(rain.y), h = H * 0.5, top = py - h / 2;
+  const px = sX(rain.x), bw = W * 0.30, left = px - bw / 2;
   const a = rain.alpha;
-  // voile gris qui assombrit l'eau sous l'averse
-  const g = ctx.createLinearGradient(0, top, 0, top + h);
+  // voile gris vertical qui assombrit l'eau sous l'averse
+  const g = ctx.createLinearGradient(left, 0, left + bw, 0);
   g.addColorStop(0, "rgba(40,52,66,0)");
   g.addColorStop(0.5, "rgba(40,52,66," + (0.34 * a) + ")");
   g.addColorStop(1, "rgba(40,52,66,0)");
-  ctx.fillStyle = g; ctx.fillRect(0, top, W, h);
-  // gouttes de pluie : tombent du haut vers le bas (vertical), avec une
-  // legere derive horizontale due au vent. La bande traverse le lagon
-  // horizontalement (deplacement du voile), mais l'eau tombe verticalement.
+  ctx.fillStyle = g; ctx.fillRect(left, 0, bw, H);
+  // gouttes de pluie : tombent du haut vers le bas dans la bande verticale,
+  // avec une legere derive horizontale due au vent.
   ctx.strokeStyle = "rgba(190,212,228," + (0.32 * a) + ")";
   ctx.lineWidth = 1; ctx.beginPath();
   const drift = -Math.cos(L.windFrom) * 1.6;
   for (let i = 0; i < 70; i++) {
-    const x = (i * 53) % W, y = top + ((i * 37 + t * 220) % h);
+    const x = left + ((i * 53) % bw), y = (i * 37 + t * 220) % H;
     ctx.moveTo(x, y); ctx.lineTo(x + drift, y + 7);
   }
   ctx.stroke();

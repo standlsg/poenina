@@ -132,10 +132,15 @@ function currentAt(x, y, t) {
     if (r2 > a2 * 30) continue;                 // influence jusqu'à ~5 rayons
     if (r2 < a2) r2 = a2;
     const r = Math.sqrt(r2), rx = dx / r, ry = dy / r;
-    const ampA = amp * (1 + 0.15 * Math.sin(t * 0.13 + p.x * 0.07 + p.y * 0.05));
-    const k = a2 / r2 * ampA * 1.25, dot = ux * rx + uy * ry;
+    const k = a2 / r2 * amp * 1.25, dot = ux * rx + uy * ry;
     cx -= k * (2 * dot * rx - ux);
     cy -= k * (2 * dot * ry - uy);
+    // tourbillon : petite rotation autour de la patate, s'intensifie
+    // puis s'estompe (alternance), visible sur les particules de courant.
+    const spin = Math.sin(t * 0.6 + p.x * 0.07 + p.y * 0.05);
+    const wk = a2 / r2 * 0.18 * amp * spin;
+    cx += -ry * wk;
+    cy += rx * wk;
   }
 
   /* 3. Ni la plage ni la barrière ne laissent passer l'eau : on éteint
