@@ -58,6 +58,7 @@ function resetBoat() {
   B.anchorReady = true;
   B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
   B.anchorRaise = false; B.chainWasTaut = false;
+  B.sog = 0; B.stw = 0;
   L.trail.length = 0;
 }
 
@@ -285,11 +286,10 @@ function updateBoat(dt, t) {
   /* Application de la position : courant toujours plein, dérive vent
      atténuée par √(1 − erre/vfMax), vfMax = 0,25 m/s (≈ 0,5 kt).     */
   const att = Math.sqrt(1 - clamp(Math.hypot(B.vx, B.vy) / 0.25, 0, 1));
-  // sous ancre le bateau est fixé au fond : vitesse fond nulle.
-  if (B.anchored) { B.gvx = 0; B.gvy = 0; }
-  else { B.gvx = B.vx + B.cx + B.lx * att; B.gvy = B.vy + B.cy + B.ly * att; }
-  // sous ancre, le déplacement est géré par la dynamique mouillage (fin de
-  // fonction) ; ici on ne fait que tenir la route fond à jour.
+  B.gvx = B.vx + B.cx + B.lx * att;   // vitesse fond théorique (servit la rose des vents)
+  B.gvy = B.vy + B.cy + B.ly * att;
+  // position avant déplacement : sert au calcul réel des vitesses SOG/STW
+  const px = B.x, py = B.y;
   if (!B.anchored) {
     B.x += B.gvx * h;
     B.y += B.gvy * h;
@@ -536,5 +536,18 @@ function updateBoat(dt, t) {
     B.anchoredStop = !motProp && vm < 0.13 && chainTaut && B.anchored;
   } else {
     B.anchoredStop = false;
+  }
+
+  // vitesses SOG/STW mesurées sur le déplacement réel du bateau (identique
+  // dans tous les cas : sous voile, en dérive, à l'arrêt, sous ancre).
+  // SOG = vitesse sur le fond = déplacement réel / dt.
+  // STW = vitesse sur l'eau = SOG − courant (flux d'eau sur la coque).
+  if (dt > 1e-6) {
+    const dxv = (B.x - px) / dt, dyv = (B.y - py) / dt;
+    B.sog = Math.hypot(dxv, dyv);
+    // composante du courant à la position du bateau (B.cx/cy déjà calculés)
+    B.stw = Math.hypot(dxv - B.cx, dyv - B.cy);
+    // route fond réelle (rose des vents) : la direction réellement suivie
+    if (B.sog > 0.01) { B.gvx = dxv; B.gvy = dyv; }
   }
 }
