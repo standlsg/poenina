@@ -1144,18 +1144,18 @@ function drawFishers(t) {
     ctx.beginPath(); ctx.arc(-3.5, 0, 0.34, 0, TAU); ctx.stroke();
     // le pecheur : assis a l'arriere, pres du moteur (poupe = -x)
     ctx.fillStyle = "rgba(50,38,30,0.95)";
-    ctx.beginPath(); ctx.arc(-1.9, 0.78, 0.5, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(-1.5, 0.45, 0.5, 0, TAU); ctx.fill();
     ctx.fillStyle = "rgba(238,214,138,0.97)";   // chapeau de paille
     ctx.strokeStyle = rgba(P.line, 0.55); ctx.lineWidth = 0.08;
-    ctx.beginPath(); ctx.ellipse(-1.9, 0.76, 0.78, 0.68, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(-1.5, 0.43, 0.78, 0.68, 0, 0, TAU); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "rgba(196,168,104,0.9)";   // calotte du chapeau
-    ctx.beginPath(); ctx.ellipse(-1.9, 0.76, 0.42, 0.36, 0, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-1.5, 0.43, 0.42, 0.36, 0, 0, TAU); ctx.fill();
     // canne a peche : perpendiculaire au bateau (vers tribord = +y), tenue a la main,
     // depassant du flanc, avec un bout de ligne pendant dans l'eau.
     ctx.strokeStyle = "rgba(54,36,22,0.96)"; ctx.lineWidth = 0.07; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.moveTo(-1.9, 1.3); ctx.lineTo(-1.9, 2.7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-1.5, 1.0); ctx.lineTo(-1.5, 2.4); ctx.stroke();
     ctx.strokeStyle = "rgba(236,232,210,0.9)"; ctx.lineWidth = 0.04;
-    ctx.beginPath(); ctx.moveTo(-1.9, 2.7); ctx.lineTo(-1.8, 3.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-1.5, 2.4); ctx.lineTo(-1.4, 3.2); ctx.stroke();
     ctx.lineCap = "butt";
     ctx.restore();
   }
