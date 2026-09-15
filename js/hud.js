@@ -281,32 +281,12 @@ function drawHUD(t) {
 
   /* --- messages --- */
   let msg = null, mc = UI.gold;
-  const engRun = B.engineOn && B.engineDead === 0;
+  // barres de progression du mouillage (sans messages texte — voir menu pause)
   if (B.anchorRaise) {
-    msg = "LA CHAÎNE REMONTE"; mc = UI.gold;
     bar(W / 2 - 66, H - 86, 132, 8, 1 - B.anchorDrop, UI.gold);
-  } else if (B.anchoredStop && B.inAnch) {
-    msg = "MOUILLAGE VALIDÉ"; mc = UI.mint;
-  } else if (B.anchored) {
-    const remMsg = B.anchorReady ? "MAINTIENS A POUR REMONTER" : "RELÂCHE A PUIS MAINTIENS POUR REMONTER";
-    if (B.anchoredStop) { msg = "BATEAU ARRÊTÉ — " + remMsg; mc = UI.dim; }
-    else {
-      const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
-      const taut = Math.hypot(cdx, cdy) >= B.chainR - 0.5;
-      msg = taut ? "CHAÎNE TENDUE — " + remMsg
-                 : "SOUS L'ANCRE — " + remMsg;
-      msg += engRun ? "" : " (MOTEUR ÉTEINT)";
-      mc = UI.dim;
-    }
-  } else if (Input.anchor || B.anchoring > 0 || B.anchorDrop > 0) {
-    const spd = Math.hypot(B.vx, B.vy);
-    if (spd > 0.9) { msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)"; mc = "rgb(255,175,140)"; }
-    else { msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
-                         : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (HORS ZONE)");
-          mc = B.inAnch ? UI.mint : UI.dim; }
+  } else if (Input.anchor || B.anchoring > 0) {
     if (B.anchoring > 0) {
       bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);
-      txt("LA CHAÎNE FILE", W / 2, H - 90, 7, UI.gold, "center");
     }
   } else if (B.engineDead > 0 && B.sailUp < 0.5) {
     msg = "PAS DE MOTEUR —  ESPACE  POUR ENVOYER LA VOILE"; mc = UI.warn;
@@ -714,7 +694,7 @@ function doneText(t, y) {
 
 function pauseOverlay(t) {
   ctx.fillStyle = "rgba(7,22,36,0.72)"; ctx.fillRect(0, 0, W, H);
-  const bw = Math.min(280, W - 16), bh = 128, bx = W / 2 - bw / 2, by = H / 2 - bh / 2;
+  const bw = Math.min(280, W - 16), bh = 146, bx = W / 2 - bw / 2, by = H / 2 - bh / 2;
   panel(bx, by, bw, bh, 0.92);
   txt("PAUSE", W / 2, by + 30, 24, "#fff2cf", "center");
   ctx.strokeStyle = "rgba(140,208,224,0.3)"; ctx.lineWidth = 1;
@@ -724,7 +704,8 @@ function pauseOverlay(t) {
     ["ESPACE / P", "reprendre la partie", "rgba(255,250,220," + bl + ")"],
     ["R", "recommencer ce niveau", UI.ink],
     ["N", "nouvelle partie (niveau 1)", UI.ink],
-    ["M", "couper le son", UI.dim]
+    ["M", "couper le son", UI.dim],
+    ["A", "ancre", UI.dim]
   ];
   rows.forEach((r, i) => {
     const y = by + 58 + i * 16;
