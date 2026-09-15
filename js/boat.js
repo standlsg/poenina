@@ -22,7 +22,8 @@ const B = {
      descente animée (anchorDrop 0->1), relèvement prêt (anchorReady),
      statut arrêté (anchoredStop), cd anti-spam messages (warnCd). */
   anchorX: 0, anchorY: 0, chainR: 8, anchoring: 0, anchorDrop: 0,
-  anchorReady: false, anchored: false, anchoredStop: false, inAnch: false, warnCd: 0
+  anchorReady: false, anchored: false, anchoredStop: false, inAnch: false, warnCd: 0,
+  anchorRaise: false
 };
 
 /* polaire de la grand-voile : angle au vent réel (deg) -> rendement.
@@ -53,6 +54,7 @@ function resetBoat() {
   B.clearance = 9; B.scrapeCd = 0; B.creakCd = 0;
   B.anchorX = 0; B.anchorY = 0; B.anchoring = 0; B.anchorDrop = 0;
   B.anchorReady = false; B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
+  B.anchorRaise = false;
   L.trail.length = 0;
 }
 
@@ -415,16 +417,38 @@ function updateBoat(dt, t) {
       }
     } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
   } else {
-    // ancre posée : relâcher A puis le rappuyer (moteur allumé) = remonter.
+    // ancre posée : relâcher A puis le MAINTENIR (moteur allumé) remonte la
+    // chaîne (animation inverse de la descente). Une fois remontée, l'ancre
+    // est levée. Le moteur allumé est requis (treuil mécanique).
     if (!Input.anchor) B.anchorReady = true;
-    else if (B.anchorReady) {
+    else if (B.anchorReady && !B.anchorRaise) {
+      // début de remontée : on décolle l'ancre du fond (anchorDrop 1->0).
       if (!engRun) {
         if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
       } else {
-        B.anchored = false; B.anchoring = 0; B.anchorReady = false;
-        B.anchorDrop = 0; B.anchoredStop = false;
+        B.anchorRaise = true;
+        B.anchored = false; B.anchoredStop = false; B.anchorReady = false;
+        Game.flash("LA CHAÎNE REMONTE", 2); Snd.sChain();
+      }
+    }
+  }
+
+  // animation de remontée : anchorDrop décroît de 1 vers 0 (l'ancre
+  // remonte du fond vers la proue). Tant que le joueur MAINTIENT A et le
+  // moteur tourne ; sinon la remontée s'interrompt (l'ancre reste où elle
+  // est, ancrée à nouveau si elle était au fond).
+  if (B.anchorRaise) {
+    if (Input.anchor && engRun) {
+      B.anchorDrop = Math.max(0, B.anchorDrop - dt / 1.6);
+      if (Math.random() < dt * 9) Snd.sChain();
+      if (B.anchorDrop <= 0) {
+        B.anchorRaise = false; B.anchorDrop = 0; B.anchorReady = false;
         Game.flash("L'ANCRE EST REMONTÉE", 1.5); Snd.sChain();
       }
+    } else {
+      // interruption : l'ancre retombe au fond si elle était quasi posée.
+      B.anchorRaise = false;
+      if (B.anchorDrop > 0.55) { B.anchored = true; B.anchorReady = false; }
     }
   }
 

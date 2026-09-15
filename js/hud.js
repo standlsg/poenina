@@ -282,15 +282,18 @@ function drawHUD(t) {
   /* --- messages --- */
   let msg = null, mc = UI.gold;
   const engRun = B.engineOn && B.engineDead === 0;
-  if (B.anchoredStop && B.inAnch) {
+  if (B.anchorRaise) {
+    msg = "LA CHAÎNE REMONTE"; mc = UI.gold;
+    bar(W / 2 - 66, H - 86, 132, 8, 1 - B.anchorDrop, UI.gold);
+  } else if (B.anchoredStop && B.inAnch) {
     msg = "MOUILLAGE VALIDÉ"; mc = UI.mint;
   } else if (B.anchored) {
-    if (B.anchoredStop) { msg = "BATEAU ARRÊTÉ — RELÂCHE A ET RE-APPUYE POUR REMONTER"; mc = UI.dim; }
+    if (B.anchoredStop) { msg = "BATEAU ARRÊTÉ — RELÂCHE A ET MAINTIENS POUR REMONTER"; mc = UI.dim; }
     else {
       const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
       const taut = Math.hypot(cdx, cdy) >= B.chainR - 0.5;
-      msg = taut ? "CHAÎNE TENDUE — RELÂCHE A ET RE-APPUYE POUR REMONTER"
-                 : "SOUS L'ANCRE — RELÂCHE A ET RE-APPUYE POUR REMONTER";
+      msg = taut ? "CHAÎNE TENDUE — RELÂCHE A ET MAINTIENS POUR REMONTER"
+                 : "SOUS L'ANCRE — RELÂCHE A ET MAINTIENS POUR REMONTER";
       msg += engRun ? "" : " (MOTEUR ÉTEINT)";
       mc = UI.dim;
     }
