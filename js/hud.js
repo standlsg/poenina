@@ -281,14 +281,16 @@ function drawHUD(t) {
 
   /* --- messages --- */
   let msg = null, mc = UI.gold;
-  const engRun = B.engineOn && B.engineDead === 0 && B.starting <= 0;
+  // le treuil d'ancre tourne des que le moteur demarre : on n'attend pas la
+  // fin de la phase de demarrage (B.starting) pour remonter ou mouiller.
+  const engRun = B.engineOn && B.engineDead === 0;
   if (B.anchored) {
     msg = B.inAnch ? "MOUILLAGE VALIDÉ" : ("ANCRE POSÉE — RELÂCHE A ET RE-APPUYE POUR REMONTER"
-                   + (engRun ? "" : " (MOTEUR REQUIS)"));
+                   + (engRun ? "" : " (MOTEUR ÉTEINT)"));
     mc = B.inAnch ? UI.mint : UI.dim;
   } else if (Input.anchor || B.anchoring > 0) {
     if (!engRun) {
-      msg = "MOTEUR REQUIS POUR MOUILLER — DÉMARRE LE MOTEUR";
+      msg = "MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER";
       mc = UI.warn;
     } else {
       const spd = Math.hypot(B.vx, B.vy);
