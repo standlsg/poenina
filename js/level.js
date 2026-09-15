@@ -283,8 +283,12 @@ function buildLevel(n, seedExtra) {
   L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
   L.windFrom0 = L.windFrom;          // cap de référence pour la dérive lente
   L.windDrift = (rng() < 0.5 ? 1 : -1) * (0.014 + 0.012 * n / CFG.MAXLEVEL); // rad/s
-  L.windPow = S.windPow;               // ce que subissent la voile et la coque
-  L.windKn = S.windPow / 2;            // ce que lit l'anémomètre
+  L.windPow0 = S.windPow;              // vent nominal (brise de mer établie)
+  L.windPow = S.windPow;               // vent effectif (recalculé chaque frame)
+  L.windKn = S.windPow / 2;            // anémomètre (suit le vent effectif)
+  L.gustPhase = rng() * TAU;           // phase des rafales de transition thermique
+  L.duskFlash = false;                 // repères de transition vent (crépuscule / brise de terre)
+  L.landFlash = false;
 
   /* ---- décor ---- */
   L.palms = [];

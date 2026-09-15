@@ -219,9 +219,31 @@ function frame(now) {
       ? NIGHT_SUN + (1 - NIGHT_SUN) * clamp(L.time / L.dayLength, 0, 1)
       : clamp(L.time / L.dayLength, 0, 1);
     SUN = sunParams(L.sun);
-    // le vent dérive lentement : la rose des vents est vivante
+    // ---- vent : brise de mer -> tombée du soir -> brise de terre ----
+    // Le soleil ne se lève jamais : L.sun ne fait que monter vers la nuit.
+    // Plein jour (sun<0.80) : brise de mer établie, vent nominal.
+    // Crépuscule (sun 0.80->0.90) : le vent tombe (contraste thermique meurt).
+    // Nuit (sun 0.90->1.0) : la brise de terre prend le relais, plus faible
+    // mais exagérée (78 %) pour ne pas laisser le joueur en pétole.
+    const s80 = clamp((L.sun - 0.80) / 0.10, 0, 1);   // 0->1 sur le crépuscule
+    const s90 = clamp((L.sun - 0.90) / 0.10, 0, 1);   // 0->1 sur la nuit
+    let therm;
+    if (L.sun < 0.80) therm = 1.0;
+    else if (L.sun < 0.90) therm = lerp(1.0, 0.70, s80);
+    else therm = lerp(0.70, 0.78, s90);
+    // rafales de transition thermique (±20 %, ~12 s) sur la fenêtre de bascule
+    const trans = (L.sun >= 0.80 && L.sun <= 0.97);
+    const gust = trans ? 1 + 0.20 * Math.sin(L.time * 0.5 + L.gustPhase) : 1;
+    L.windPow = L.windPow0 * therm * gust;
+    L.windKn = L.windPow / 2;
+    // le vent dérive lentement : la rose des vents est vivante. Borne élargie
+    // à ±30°, dérive accélérée pendant la transition (brise qui se cherche).
     const wd = angDiff(L.windFrom, L.windFrom0);
-    if (Math.abs(wd) < 0.31) L.windFrom += L.windDrift * dt;   // borné à ±18°
+    const driftMul = trans ? 1.8 : 1.0;
+    if (Math.abs(wd) < 0.52) L.windFrom += L.windDrift * dt * driftMul;
+    // repérés visuels de la transition
+    if (!L.duskFlash && L.sun > 0.80) { L.duskFlash = true; Game.flash("LE VENT TOMBE — FIN DE JOURNÉE", 3); }
+    if (!L.landFlash && L.sun > 0.90) { L.landFlash = true; Game.flash("BRISE DE TERRE — RAFRALES", 3); }
     if (!L.nightFlashed && L.sun > 0.97) {
       L.nightFlashed = true;
       Game.flash("LA NUIT EST TOMBÉE — ON NAVIGUE À LA CARTE", 4);
