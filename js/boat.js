@@ -285,8 +285,9 @@ function updateBoat(dt, t) {
   /* Application de la position : courant toujours plein, dérive vent
      atténuée par √(1 − erre/vfMax), vfMax = 0,25 m/s (≈ 0,5 kt).     */
   const att = Math.sqrt(1 - clamp(Math.hypot(B.vx, B.vy) / 0.25, 0, 1));
-  B.gvx = B.vx + B.cx + B.lx * att;   // vitesse fond réelle (servit la rose des vents)
-  B.gvy = B.vy + B.cy + B.ly * att;
+  // sous ancre le bateau est fixé au fond : vitesse fond nulle.
+  if (B.anchored) { B.gvx = 0; B.gvy = 0; }
+  else { B.gvx = B.vx + B.cx + B.lx * att; B.gvy = B.vy + B.cy + B.ly * att; }
   // sous ancre, le déplacement est géré par la dynamique mouillage (fin de
   // fonction) ; ici on ne fait que tenir la route fond à jour.
   if (!B.anchored) {

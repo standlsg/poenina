@@ -183,11 +183,18 @@ function drawHUD(t) {
   const by = H - 58, bw = 112;
   panel(pad, by, bw, 52);
   txt("VITESSE SUR L'EAU", pad + 7, by + 11, 7, UI.dim);
-  const sp = Math.hypot(B.vx, B.vy) * KN;
-  txt(sp.toFixed(1), pad + 7, by + 27, 19, UI.mint);
-  txt("KT", pad + 9 + tw(sp.toFixed(1), 19), by + 27, 8, UI.dim);
-  // vitesse fond : la surface + le courant déplace la masse d'eau
-  txt("fond " + (Math.hypot(B.vx + B.cx + B.lx, B.vy + B.cy + B.ly) * KN).toFixed(1) + " kt",
+  // sous ancre : le bateau est fixé au fond. L'eau (courant + dérive vent)
+  // s'écoule sur la coque immobile : la vitesse eau vaut le flux, la
+  // vitesse fond est nulle. Sinon : vitesse propre (erre).
+  const waterSp = B.anchored
+    ? Math.hypot(B.cx + B.lx, B.cy + B.ly) * KN
+    : Math.hypot(B.vx, B.vy) * KN;
+  txt(waterSp.toFixed(1), pad + 7, by + 27, 19, UI.mint);
+  txt("KT", pad + 9 + tw(waterSp.toFixed(1), 19), by + 27, 8, UI.dim);
+  // vitesse fond : nulle sous ancre (fixé au fond) ; sinon surface + courant
+  const groundSp = B.anchored ? 0
+    : Math.hypot(B.vx + B.cx + B.lx, B.vy + B.cy + B.ly) * KN;
+  txt("fond " + groundSp.toFixed(1) + " kt",
     pad + 7, by + 38, 7, UI.dim);
   txt("GAZ", pad + 7, by + 48, 7, UI.dim);
   bar(pad + 30, by + 42, bw - 38, 6, (B.thr + 0.4) / 1.4, "rgb(122,208,236)");
