@@ -896,8 +896,20 @@ function drawBoat(t) {
   ctx.beginPath(); ctx.arc(fx2, fy2, 0.26, 0, TAU); ctx.fill();
   ctx.strokeStyle = rgba(P.line, 0.6); ctx.lineWidth = HAIR; ctx.stroke();
 
-  // chaîne d'ancre
-  if (B.anchoring > 0 || B.anchored) {
+  // chaîne d'ancre : de la proue vers le point d'ancrage au sol
+  if (B.anchored) {
+    // position de l'ancre dans le repère local du bateau
+    const wx = B.anchorX - B.x, wy = B.anchorY - B.y;
+    const ch = Math.cos(B.h), sh = Math.sin(B.h);
+    const lx = (wx * ch + wy * sh) / CFG.K, ly = (-wx * sh + wy * ch) / CFG.K;
+    ctx.strokeStyle = rgba(P.line, 0.7); ctx.lineWidth = 1.3 / K;
+    ctx.setLineDash([0.35, 0.3]);
+    ctx.beginPath(); ctx.moveTo(5.6, 0); ctx.lineTo(lx, ly); ctx.stroke();
+    ctx.setLineDash([]);
+    // ancre au fond
+    ctx.fillStyle = rgba(P.line, 0.6);
+    ctx.beginPath(); ctx.arc(lx, ly, 0.35, 0, TAU); ctx.fill();
+  } else if (B.anchoring > 0) {
     ctx.strokeStyle = rgba(P.line, 0.75); ctx.lineWidth = 1.3 / K;
     ctx.setLineDash([0.35, 0.3]);
     ctx.beginPath(); ctx.moveTo(5.6, 0); ctx.lineTo(5.6 + 3 + B.anchoring * 5, 0); ctx.stroke();
