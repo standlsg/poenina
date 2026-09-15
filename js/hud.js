@@ -183,11 +183,12 @@ function drawHUD(t) {
   const by = H - 58, bw = 112;
   panel(pad, by, bw, 52);
   txt("VITESSE SUR L'EAU", pad + 7, by + 11, 7, UI.dim);
-  // sous ancre : le bateau est fixé au fond. L'eau (courant + dérive vent)
-  // s'écoule sur la coque immobile : la vitesse eau vaut le flux, la
-  // vitesse fond est nulle. Sinon : vitesse propre (erre).
+  // sous ancre : le bateau est fixé au fond. Seul le courant (masse d'eau
+  // en mouvement) s'écoule sur la coque immobile : la vitesse eau vaut le
+  // courant, la vitesse fond est nulle. La dérive vent (poussée sur la
+  // coque) est neutralisée par la chaîne et ne crée pas de flux d'eau.
   const waterSp = B.anchored
-    ? Math.hypot(B.cx + B.lx, B.cy + B.ly) * KN
+    ? Math.hypot(B.cx, B.cy) * KN
     : Math.hypot(B.vx, B.vy) * KN;
   txt(waterSp.toFixed(1), pad + 7, by + 27, 19, UI.mint);
   txt("KT", pad + 9 + tw(waterSp.toFixed(1), 19), by + 27, 8, UI.dim);
