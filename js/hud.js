@@ -290,8 +290,6 @@ function drawHUD(t) {
     }
   } else if (B.engineDead > 0 && B.sailUp < 0.5) {
     msg = "PAS DE MOTEUR —  ESPACE  POUR ENVOYER LA VOILE"; mc = UI.warn;
-  } else if (B.sailUp > 0.5 && B.luff > 0.5) {
-    msg = "TU ES DANS LE VENT — ABATS, TIRE UN BORD !"; mc = "rgb(255,190,150)";
   }
   if (Game.msg && Game.msgT > 0) { msg = Game.msg; mc = UI.gold; }
   if (msg) {
