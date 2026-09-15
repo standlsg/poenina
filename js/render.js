@@ -1054,8 +1054,8 @@ function applyLight() {
     const r0 = lerp(190, 8, nt), r1 = lerp(520, 24, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(5,11,30,0)");
-    g.addColorStop(0.5, "rgba(5,11,30," + (0.6 * nt) + ")");
-    g.addColorStop(1, "rgba(4,9,26," + (0.94 * nt) + ")");
+    g.addColorStop(0.5, "rgba(4,8,24," + (0.7 * nt) + ")");
+    g.addColorStop(1, "rgba(3,6,20," + (0.99 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1115,6 +1115,12 @@ function drawNavLights() {
   cg.addColorStop(0.6, "rgba(255,236,184," + (0.14 * a) + ")");
   cg.addColorStop(1, "rgba(255,236,184,0)");
   ctx.fillStyle = cg;
+  ctx.fill();
+  // restaure une partie de la couleur/saturation dans le cône (la nuit
+  // appliqueLight a désaturé l'écran) : composite 'color' avec une teinte
+  // chaude, moitié du plein jour.
+  ctx.globalCompositeOperation = "color";
+  ctx.fillStyle = "rgba(255,238,200," + (0.45 * a) + ")";
   ctx.fill();
   ctx.restore();
   ctx.restore();
