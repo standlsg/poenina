@@ -595,6 +595,48 @@ function drawBoat(t) {
   const px = sX(B.x), py = sY(B.y);
   if (px < -180 || px > W + 180 || py < -180 || py > H + 180) return;
 
+  // chaîne + ancre au fond : dessinées en coordonnées écran (sous le bateau).
+  // La proue du bateau est à 5.6 m vers l'avant (B.h).
+  if (B.anchored || B.anchorDrop > 0) {
+    const bowX = B.x + Math.cos(B.h) * 5.6, bowY = B.y + Math.sin(B.h) * 5.6;
+    const bx = sX(bowX), by = sY(bowY);
+    let ax = B.anchorX, ay = B.anchorY;
+    if (B.anchorDrop > 0 && B.anchorDrop < 1) {
+      // animation de descente : l'ancre part de la proue et s'enfonce.
+      ax = bowX + (B.anchorX - bowX) * B.anchorDrop;
+      ay = bowY + (B.anchorY - bowY) * B.anchorDrop;
+    }
+    const sx = sX(ax), sy = sY(ay);
+    // chaîne qui file / arc / tendue
+    const dist = Math.hypot(B.anchorX - bowX, B.anchorY - bowY);
+    const taut = B.anchorDrop >= 1 && dist >= B.chainR - 0.5;
+    ctx.strokeStyle = rgba(P.line, taut ? 0.85 : (B.anchorDrop < 1 ? 0.6 : 0.6));
+    ctx.lineWidth = (taut ? 1.3 : 1.1) / K;
+    if (taut) {
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(sx, sy); ctx.stroke();
+    } else if (B.anchorDrop < 1) {
+      ctx.setLineDash([0.3 * K, 0.25 * K]);
+      ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(sx, sy); ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      // chaîne souple : arc qui pend (point de contrôle bas au milieu)
+      ctx.setLineDash([]);
+      const mx = (bx + sx) / 2, my = (by + sy) / 2;
+      ctx.beginPath(); ctx.moveTo(bx, by);
+      ctx.quadraticCurveTo(mx, my + 0.9 * K, sx, sy);
+      ctx.stroke();
+    }
+    // ancre au fond (point fixe gris) + croisillon
+    ctx.fillStyle = rgba(P.line, 0.7);
+    ctx.beginPath(); ctx.arc(sx, sy, 0.34 * K, 0, TAU); ctx.fill();
+    ctx.strokeStyle = rgba(P.line, 0.5); ctx.lineWidth = HAIR;
+    ctx.beginPath();
+    ctx.moveTo(sx - 0.5 * K, sy); ctx.lineTo(sx + 0.5 * K, sy);
+    ctx.moveTo(sx, sy - 0.5 * K); ctx.lineTo(sx, sy + 0.5 * K);
+    ctx.stroke();
+  }
+
   // ombre portée sur l'eau
   ctx.save();
   ctx.translate(px + 4, py + 5);
@@ -662,12 +704,15 @@ function drawBoat(t) {
     ctx.closePath();
     ctx.strokeStyle = line; ctx.lineWidth = LNW; ctx.stroke();
   }
-  // davier + ancre
+  // davier + ancre (l'ancre est sur le davier seulement quand elle est
+  // levée : pas ancrée, pas en descente). Sinon elle est à l'eau.
   ctx.fillStyle = rgbStr(P.mast);
   rr(ctx, 4.55, -0.22, 1.25, 0.44, 0.12); ctx.fill();
   ctx.strokeStyle = line; ctx.lineWidth = THIN; ctx.stroke();
-  ctx.fillStyle = rgba(P.line, 0.8);
-  rr(ctx, 4.85, -0.12, 0.7, 0.24, 0.08); ctx.fill();
+  if (!B.anchored && B.anchorDrop <= 0) {
+    ctx.fillStyle = rgba(P.line, 0.8);
+    rr(ctx, 4.85, -0.12, 0.7, 0.24, 0.08); ctx.fill();
+  }
 
   /* ============================= cockpit =============================== */
   ctx.fillStyle = rgbStr(P.deck);
@@ -896,56 +941,6 @@ function drawBoat(t) {
   ctx.beginPath(); ctx.arc(fx2, fy2, 0.26, 0, TAU); ctx.fill();
   ctx.strokeStyle = rgba(P.line, 0.6); ctx.lineWidth = HAIR; ctx.stroke();
 
-  // chaîne d'ancre : de la proue (5.6, 0) vers l'ancre au fond.
-  if (B.anchored || B.anchorDrop > 0) {
-    // position de l'ancre dans le repere local du bateau
-    let ax = B.anchorX, ay = B.anchorY;
-    if (B.anchorDrop > 0 && B.anchorDrop < 1) {
-      // animation de descente : l'ancre part de la proue (5.6, 0) et
-      // s'enfonce vers sa position finale au fond.
-      const tx = B.anchorX - B.x, ty = B.anchorY - B.y;
-      const fx = 5.6, fy = 0;            // proue, repere local
-      const lx = (tx * Math.cos(B.h) + ty * Math.sin(B.h)) / CFG.K;
-      const ly = (-tx * Math.sin(B.h) + ty * Math.cos(B.h)) / CFG.K;
-      ax = B.x + (fx * (1 - B.anchorDrop) + (B.anchorX - B.x) * B.anchorDrop);
-      ay = B.y + (fy * (1 - B.anchorDrop) + (B.anchorY - B.y) * B.anchorDrop);
-      const wx = ax - B.x, wy = ay - B.y;
-      const llx = (wx * Math.cos(B.h) + wy * Math.sin(B.h)) / CFG.K;
-      const lly = (-wx * Math.sin(B.h) + wy * Math.cos(B.h)) / CFG.K;
-      // chaîne qui file pendant la descente
-      ctx.strokeStyle = rgba(P.line, 0.6); ctx.lineWidth = 1.1 / K;
-      ctx.setLineDash([0.3, 0.25]);
-      ctx.beginPath(); ctx.moveTo(5.6, 0); ctx.lineTo(llx, lly); ctx.stroke();
-      ctx.setLineDash([]);
-      // ancre grise en descente
-      ctx.fillStyle = rgba(P.line, 0.7 + 0.3 * B.anchorDrop);
-      ctx.beginPath(); ctx.arc(llx, lly, 0.30, 0, TAU); ctx.fill();
-    } else {
-      // ancre posée : point fixe au fond + chaîne (arc souple ou tendue)
-      const wx = B.anchorX - B.x, wy = B.anchorY - B.y;
-      const ch = Math.cos(B.h), sh = Math.sin(B.h);
-      const lx = (wx * ch + wy * sh) / CFG.K, ly = (-wx * sh + wy * ch) / CFG.K;
-      const dist = Math.hypot(wx, wy);
-      const taut = dist >= B.chainR - 0.5;
-      ctx.strokeStyle = rgba(P.line, taut ? 0.85 : 0.6); ctx.lineWidth = 1.3 / K;
-      if (taut) {
-        // chaîne tendue : segment droit
-        ctx.beginPath(); ctx.moveTo(5.6, 0); ctx.lineTo(lx, ly); ctx.stroke();
-      } else {
-        // chaîne souple : arc qui pend (contrôle point bas au milieu)
-        ctx.beginPath(); ctx.moveTo(5.6, 0);
-        ctx.quadraticCurveTo((5.6 + lx) / 2, (ly) / 2 + 0.9, lx, ly);
-        ctx.stroke();
-      }
-      // ancre au fond (point fixe gris)
-      ctx.fillStyle = rgba(P.line, 0.65);
-      ctx.beginPath(); ctx.arc(lx, ly, 0.34, 0, TAU); ctx.fill();
-      // petit croisillon d'ancre
-      ctx.strokeStyle = rgba(P.line, 0.5); ctx.lineWidth = HAIR;
-      ctx.beginPath(); ctx.moveTo(lx - 0.5, ly); ctx.lineTo(lx + 0.5, ly);
-      ctx.moveTo(lx, ly - 0.5); ctx.lineTo(lx, ly + 0.5); ctx.stroke();
-    }
-  }
   // la mer recouvre la coque au fur et à mesure
   if (sink > 0.02) {
     ctx.fillStyle = rgba(P.ocean, 0.5 * sink);
