@@ -288,12 +288,12 @@ function drawHUD(t) {
   } else if (B.anchoredStop && B.inAnch) {
     msg = "MOUILLAGE VALIDÉ"; mc = UI.mint;
   } else if (B.anchored) {
-    if (B.anchoredStop) { msg = "BATEAU ARRÊTÉ — RELÂCHE A ET MAINTIENS POUR REMONTER"; mc = UI.dim; }
+    if (B.anchoredStop) { msg = "BATEAU ARRÊTÉ — MAINTIENS A POUR REMONTER"; mc = UI.dim; }
     else {
       const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
       const taut = Math.hypot(cdx, cdy) >= B.chainR - 0.5;
-      msg = taut ? "CHAÎNE TENDUE — RELÂCHE A ET MAINTIENS POUR REMONTER"
-                 : "SOUS L'ANCRE — RELÂCHE A ET MAINTIENS POUR REMONTER";
+      msg = taut ? "CHAÎNE TENDUE — MAINTIENS A POUR REMONTER"
+                 : "SOUS L'ANCRE — MAINTIENS A POUR REMONTER";
       msg += engRun ? "" : " (MOTEUR ÉTEINT)";
       mc = UI.dim;
     }

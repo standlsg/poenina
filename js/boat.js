@@ -19,10 +19,11 @@ const B = {
   hull: HULL_MAX, invuln: 0, hitFlash: 0, leak: 0,
   clearance: 9, scrapeCd: 0,
   /* mouillage : ancre (point fixe au fond), chaîne (longueur max),
-     descente animée (anchorDrop 0->1), relèvement prêt (anchorReady),
-     statut arrêté (anchoredStop), cd anti-spam messages (warnCd). */
+     descente animée (anchorDrop 0->1), remontée animée (anchorRaise,
+     anchorDrop 1->0), statut arrêté (anchoredStop),
+     cd anti-spam messages (warnCd). */
   anchorX: 0, anchorY: 0, chainR: 8, anchoring: 0, anchorDrop: 0,
-  anchorReady: false, anchored: false, anchoredStop: false, inAnch: false, warnCd: 0,
+  anchored: false, anchoredStop: false, inAnch: false, warnCd: 0,
   anchorRaise: false
 };
 
@@ -53,7 +54,7 @@ function resetBoat() {
   B.hull = HULL_MAX; B.invuln = 0; B.hitFlash = 0; B.leak = 0;
   B.clearance = 9; B.scrapeCd = 0; B.creakCd = 0;
   B.anchorX = 0; B.anchorY = 0; B.anchoring = 0; B.anchorDrop = 0;
-  B.anchorReady = false; B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
+  B.anchored = false; B.anchoredStop = false; B.inAnch = false; B.warnCd = 0;
   B.anchorRaise = false;
   L.trail.length = 0;
 }
@@ -384,20 +385,48 @@ function updateBoat(dt, t) {
   // propulsion moteur effective : moteur tournant ET des gaz.
   const motProp = running && B.thr > 0.05;
 
-  if (!B.anchored) {
-    // descente / relèvement : tant qu'on n'est pas ancré, A gère le jet.
-    if (B.anchorDrop > 0 && B.anchorDrop < 1) {
-      // l'ancre descend vers le fond (animation), puis l'ancre croche.
-      B.anchorDrop = Math.min(1, B.anchorDrop + dt / 1.1);
+  /* priorité à la remontée : si l'ancre est en cours de remontée, on
+     gère uniquement ça (la descente ne doit pas se battre avec). */
+  if (B.anchorRaise) {
+    if (Input.anchor && engRun) {
+      B.anchorDrop = Math.max(0, B.anchorDrop - dt / 1.6);
       if (Math.random() < dt * 9) Snd.sChain();
-      if (B.anchorDrop >= 1) {
-        B.anchored = true; B.anchoring = 0; B.anchorReady = false;
-        Snd.sAnchorSet();
-        if (B.inAnch) Game.flash("ANCRE POSÉE DANS LE MOUILLAGE — ARRÊTE-TOI", 3);
-        else Game.flash("ANCRE POSÉE — RELÂCHE A ET RE-APPUYE POUR REMONTER", 3);
+      if (B.anchorDrop <= 0) {
+        B.anchorRaise = false; B.anchorDrop = 0;
+        Game.flash("L'ANCRE EST REMONTÉE", 1.5); Snd.sChain();
       }
-    } else if (Input.anchor) {
-      B.anchorReady = false;
+    } else {
+      // interruption : on relâche A ou le moteur coupe. L'ancre retombe
+      // au fond et se ré-ancrée si elle était quasi posée.
+      B.anchorRaise = false;
+      if (B.anchorDrop > 0.55) { B.anchored = true; B.anchoredStop = false; }
+    }
+  } else if (B.anchored) {
+    /* ancre posée au fond : MAINTENIR A (moteur allumé) démarre la
+       remontée de la chaîne (animation inverse de la descente). */
+    if (Input.anchor) {
+      if (!engRun) {
+        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
+      } else {
+        B.anchorRaise = true;
+        B.anchored = false; B.anchoredStop = false;
+        Game.flash("LA CHAÎNE REMONTE", 2); Snd.sChain();
+      }
+    }
+  } else if (B.anchorDrop > 0 && B.anchorDrop < 1) {
+    /* descente en cours (ancre pas encore au fond) : elle continue de
+       descendre jusqu'à crocher. Pas de A ici (le jet est déjà lancé). */
+    B.anchorDrop = Math.min(1, B.anchorDrop + dt / 1.1);
+    if (Math.random() < dt * 9) Snd.sChain();
+    if (B.anchorDrop >= 1) {
+      B.anchored = true; B.anchoring = 0;
+      Snd.sAnchorSet();
+      if (B.inAnch) Game.flash("ANCRE POSÉE DANS LE MOUILLAGE — ARRÊTE-TOI", 3);
+      else Game.flash("ANCRE POSÉE — MAINTIENS A POUR REMONTER", 3);
+    }
+  } else {
+    /* ancre levée : MAINTENIR A (moteur allumé, < 1 kt) jette l'ancre. */
+    if (Input.anchor) {
       if (!engRun) {
         B.anchoring = 0;
         if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER", 1.6); Snd.sBeep(false); }
@@ -416,40 +445,6 @@ function updateBoat(dt, t) {
         }
       }
     } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
-  } else {
-    // ancre posée : relâcher A puis le MAINTENIR (moteur allumé) remonte la
-    // chaîne (animation inverse de la descente). Une fois remontée, l'ancre
-    // est levée. Le moteur allumé est requis (treuil mécanique).
-    if (!Input.anchor) B.anchorReady = true;
-    else if (B.anchorReady && !B.anchorRaise) {
-      // début de remontée : on décolle l'ancre du fond (anchorDrop 1->0).
-      if (!engRun) {
-        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
-      } else {
-        B.anchorRaise = true;
-        B.anchored = false; B.anchoredStop = false; B.anchorReady = false;
-        Game.flash("LA CHAÎNE REMONTE", 2); Snd.sChain();
-      }
-    }
-  }
-
-  // animation de remontée : anchorDrop décroît de 1 vers 0 (l'ancre
-  // remonte du fond vers la proue). Tant que le joueur MAINTIENT A et le
-  // moteur tourne ; sinon la remontée s'interrompt (l'ancre reste où elle
-  // est, ancrée à nouveau si elle était au fond).
-  if (B.anchorRaise) {
-    if (Input.anchor && engRun) {
-      B.anchorDrop = Math.max(0, B.anchorDrop - dt / 1.6);
-      if (Math.random() < dt * 9) Snd.sChain();
-      if (B.anchorDrop <= 0) {
-        B.anchorRaise = false; B.anchorDrop = 0; B.anchorReady = false;
-        Game.flash("L'ANCRE EST REMONTÉE", 1.5); Snd.sChain();
-      }
-    } else {
-      // interruption : l'ancre retombe au fond si elle était quasi posée.
-      B.anchorRaise = false;
-      if (B.anchorDrop > 0.55) { B.anchored = true; B.anchorReady = false; }
-    }
   }
 
   // --- dynamique sous l'ancre (remplace le déplacement normal) ---
