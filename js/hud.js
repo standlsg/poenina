@@ -282,9 +282,16 @@ function drawHUD(t) {
   let msg = null, mc = UI.gold;
   if (B.inAnch && !B.anchored) {
     const spd = Math.hypot(B.vx, B.vy);
-    msg = spd > 0.9 ? "ZONE DE MOUILLAGE — RALENTIS (< 1.7 kt)"
-      : "MAINTIENS  " + KB.anchor + "  POUR MOUILLER";
-    mc = spd > 0.9 ? "rgb(255,175,140)" : UI.mint;
+    if (spd > 0.9) {
+      msg = "ZONE DE MOUILLAGE — RALENTIS (< 1 kt)";
+      mc = "rgb(255,175,140)";
+    } else if (B.twa >= 55) {
+      msg = "METS-TOI FACE AU VENT DANS LE CONE POUR MOUILLER";
+      mc = "rgb(255,200,150)";
+    } else {
+      msg = "MAINTIENS  " + KB.anchor + "  POUR MOUILLER";
+      mc = UI.mint;
+    }
     if (B.anchoring > 0) {
       bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);
       txt("LA CHAÎNE FILE", W / 2, H - 90, 7, UI.gold, "center");

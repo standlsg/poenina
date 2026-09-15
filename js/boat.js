@@ -355,12 +355,9 @@ function updateBoat(dt, t) {
   B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
   B.warnCd -= dt;
   if (B.inAnch && Input.anchor) {
-    if (speed > 0.9) {
+    if (speed > 0.514) {  // 1 kt : on mouille a l'arret dans le cone
       B.anchoring = 0;
       if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
-    } else if (B.sailUp > 0.15 && B.twa < 55) {
-      B.anchoring = 0;
-      if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("FACE AU VENT — ABATS DANS LE CONE POUR MOUILLER", 1.6); Snd.sBeep(false); }
     } else {
       B.anchoring += dt;
       if (Math.random() < dt * 12) Snd.sChain();
