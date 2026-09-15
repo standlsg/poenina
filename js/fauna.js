@@ -55,10 +55,15 @@ function updateFauna(dt, t) {
     if (f.kind === "dauphin") {
       f.jt -= dt;
       if (f.jt <= 0 && f.jump <= 0) { f.jump = 1; f.jt = 8 + Math.random() * 13; }
-      if (f.jump > 0) { f.jump -= dt * 1.05; sp *= 1.9; }
+      if (f.jump > 0) {
+        f.jump -= dt * 1.05; sp *= 1.9;
+        // eclaboussures et ondes au saut du dauphin
+        if (f.jump > 0.75 && Math.random() < dt * 4) spawnSpray(f.x, f.y, 2);
+        if (f.jump > 0.9 || f.jump < 0.15) spawnRipple(f.x, f.y, 0.4);
+      }
     }
-    // sillage en surface derrière la raie et le requin (peu profonds)
-    if ((f.kind === "raie" || f.kind === "requin") && f.dep < 2.5 && Math.random() < dt * 3) {
+    // sillage en surface derrière le requin seul (peu profond)
+    if (f.kind === "requin" && f.dep < 2.5 && Math.random() < dt * 3) {
       spawnRipple(f.x - Math.cos(f.h) * 2.5, f.y - Math.sin(f.h) * 2.5, 0.25);
     }
     f.x += Math.cos(f.h) * sp * dt; f.y += Math.sin(f.h) * sp * dt;

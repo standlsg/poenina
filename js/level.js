@@ -135,10 +135,11 @@ function currentAt(x, y, t) {
     const k = a2 / r2 * amp * 1.25, dot = ux * rx + uy * ry;
     cx -= k * (2 * dot * rx - ux);
     cy -= k * (2 * dot * ry - uy);
-    // tourbillon : petite rotation autour de la patate, s'intensifie
-    // puis s'estompe (alternance), visible sur les particules de courant.
-    const spin = Math.sin(t * 0.6 + p.x * 0.07 + p.y * 0.05);
-    const wk = a2 / r2 * 0.18 * amp * spin;
+    // tourbillon : rotation autour de la patate, plus forte pres de l'obstacle
+    // (decroissance 1/r, pas 1/r²) et alternance sens/horaire. Le courant
+    // dominant reste le moteur principal, le tourbillon dechire le sillage.
+    const spin = Math.sin(t * 0.5 + p.x * 0.07 + p.y * 0.05);
+    const wk = (a / r) * 0.55 * amp * spin;
     cx += -ry * wk;
     cy += rx * wk;
   }
