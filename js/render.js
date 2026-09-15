@@ -64,7 +64,7 @@ function updateCurrentParticles(dt, t) {
     }
   }
 }
-function drawCurrents() {
+function drawCurrents(t) {
   ctx.lineCap = "round";
   for (const p of curP) {
     const m = clamp(p.mag / 0.75, 0, 1);
@@ -77,6 +77,66 @@ function drawCurrents() {
     ctx.stroke();
   }
   ctx.lineCap = "butt";
+  drawEddies(t);
+}
+
+/* ----- petits tourbillons (vortex) a l'aval courant des patates -----
+   Apparaissent au bord d'une patate, derivent dans le courant et
+   s'estompent a ~2 m. Petit vortex blanc qui tourne sur lui-meme.    */
+const eddies = [];
+let eddySpawnT = 0;
+function updateEddies(dt, t) {
+  // spawn : periodically, near a patate close to the boat
+  eddySpawnT -= dt;
+  if (eddySpawnT <= 0) {
+    eddySpawnT = 0.25 + Math.random() * 0.4;
+    if (L.pat) for (const p of L.pat) {
+      if (p.sand) continue;
+      const dx = p.x - cam.x, dy = p.y - cam.y;
+      if (Math.hypot(dx, dy) > W / CFG.K * 0.6) continue;  // only near visible
+      const c = currentAt(p.x, p.y, t);
+      const cmag = Math.hypot(c[0], c[1]);
+      if (cmag < 0.15) continue;                            // need some current
+      // spawn at the downstream edge of the patate
+      const dirx = c[0] / cmag, diry = c[1] / cmag;
+      const ex = p.x + dirx * p.r * 0.9, ey = p.y + diry * p.r * 0.9;
+      if (Math.random() < 0.5) {
+        eddies.push({
+          x: ex, y: ey, ox: p.x, oy: p.y, r: p.r,
+          life: 1.2 + Math.random() * 0.6, t: 0,
+          spin: (Math.random() < 0.5 ? 1 : -1) * (4 + Math.random() * 3),
+          sz: 0.5 + Math.random() * 0.3
+        });
+      }
+    }
+  }
+  // update + cull
+  for (let i = eddies.length - 1; i >= 0; i--) {
+    const e = eddies[i];
+    e.t += dt;
+    const c = currentAt(e.x, e.y, t);
+    e.x += c[0] * dt; e.y += c[1] * dt;
+    const dist = Math.hypot(e.x - e.ox, e.y - e.oy);
+    if (e.t >= e.life || dist > 2.2 + e.r * 0.5) eddies.splice(i, 1);
+  }
+}
+function drawEddies(t) {
+  for (const e of eddies) {
+    const a = 1 - e.t / e.life;
+    const px = sX(e.x), py = sY(e.y);
+    const rad = e.sz * CFG.K * (0.6 + 0.4 * a);
+    ctx.strokeStyle = rgba(P.foam, 0.6 * a);
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    // spirale : 1 tour et demi
+    const ang = e.t * e.spin;
+    for (let s = 0; s <= 16; s++) {
+      const u = s / 16, rr = rad * u, aa = ang + u * TAU * 1.5 * Math.sign(e.spin);
+      const x = px + Math.cos(aa) * rr, y = py + Math.sin(aa) * rr;
+      if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
 }
 function drawWindRipples(t) {
   const wdx = -Math.cos(L.windFrom), wdy = -Math.sin(L.windFrom);
@@ -1315,7 +1375,7 @@ function drawWorld(t) {
   ctx.fillStyle = rgbStr(P.oceanDk); ctx.fillRect(0, 0, W, H);
   blit(TER.water, 0, 0);
   drawCaustics(t);
-  drawCurrents();
+  drawCurrents(t);
   drawWindRipples(t);
   drawSparkles(t);
   drawFauna(t);

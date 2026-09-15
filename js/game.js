@@ -279,6 +279,7 @@ function frame(now) {
       }
     }
     updateCurrentParticles(dt, L.time);
+    updateEddies(dt, L.time);
     updateParts(dt);
     updateBird(dt);
     updateRain(dt);
@@ -329,6 +330,7 @@ function frame(now) {
     updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
     updateFishers(dt, L.time);
     updateCurrentParticles(dt, L.time);
+    updateEddies(dt, L.time);
     updateBird(dt);
     // bulles et remous pendant que le bateau s'enfonce
     if (B.dead !== "sable" && B.dead !== "nuit") {
@@ -342,6 +344,7 @@ function frame(now) {
     updateBoat(dt, L.time); updateParts(dt); updateFauna(dt, L.time);
     updateFishers(dt, L.time);
     updateCurrentParticles(dt, L.time);
+    updateEddies(dt, L.time);
     updateBird(dt);
   }
   else if (st === "brief") { updateFauna(dt, 0); updateFishers(dt, 0); }
