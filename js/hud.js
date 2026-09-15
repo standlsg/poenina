@@ -281,33 +281,7 @@ function drawHUD(t) {
 
   /* --- messages --- */
   let msg = null, mc = UI.gold;
-  // le treuil d'ancre tourne des que le moteur demarre : on n'attend pas la
-  // fin de la phase de demarrage (B.starting) pour remonter ou mouiller.
-  const engRun = B.engineOn && B.engineDead === 0;
-  if (B.anchored) {
-    msg = B.inAnch ? "MOUILLAGE VALIDÉ" : ("ANCRE POSÉE — RELÂCHE A ET RE-APPUYE POUR REMONTER"
-                   + (engRun ? "" : " (MOTEUR ÉTEINT)"));
-    mc = B.inAnch ? UI.mint : UI.dim;
-  } else if (Input.anchor || B.anchoring > 0) {
-    if (!engRun) {
-      msg = "MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER";
-      mc = UI.warn;
-    } else {
-      const spd = Math.hypot(B.vx, B.vy);
-      if (spd > 0.9) {
-        msg = "TROP RAPIDE POUR MOUILLER — RALENTIS (< 1 kt)";
-        mc = "rgb(255,175,140)";
-      } else {
-        msg = B.inAnch ? ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER")
-                       : ("MAINTIENS  " + KB.anchor + "  POUR MOUILLER (TEMPORAIRE)");
-        mc = B.inAnch ? UI.mint : UI.dim;
-      }
-    }
-    if (B.anchoring > 0) {
-      bar(W / 2 - 66, H - 86, 132, 8, B.anchoring / 1.6, UI.gold);
-      txt("LA CHAÎNE FILE", W / 2, H - 90, 7, UI.gold, "center");
-    }
-  } else if (B.engineDead > 0 && B.sailUp < 0.5) {
+  if (B.engineDead > 0 && B.sailUp < 0.5) {
     msg = "PAS DE MOTEUR —  ESPACE  POUR ENVOYER LA VOILE"; mc = UI.warn;
   } else if (B.sailUp > 0.5 && B.luff > 0.5) {
     msg = "TU ES DANS LE VENT — ABATS, TIRE UN BORD !"; mc = "rgb(255,190,150)";

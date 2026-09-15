@@ -15,10 +15,9 @@ const B = {
   engineOn: true, engineDead: 0, sputter: 0, engineOk: 0, starting: 0,
   oil: 1, temp: 0, hot: 0, tempWarn: 0,
   heel: 0, bob: 0,
-  anchoring: 0, anchored: false, inAnch: false,
   alive: true, dead: null, sinking: 0, stuck: 0,
   hull: HULL_MAX, invuln: 0, hitFlash: 0, leak: 0,
-  clearance: 9, scrapeCd: 0, warnCd: 0
+  clearance: 9, scrapeCd: 0
 };
 
 /* polaire de la grand-voile : angle au vent réel (deg) -> rendement.
@@ -43,11 +42,10 @@ function resetBoat() {
   B.sail = false; B.sailUp = 0; B.boom = 0.5; B.luff = 0;
   B.engineOn = true; B.engineDead = 0; B.sputter = 0; B.engineOk = 0; B.starting = 0;
   B.oil = 1; B.temp = 0; B.hot = 0; B.tempWarn = 0;
-  B.heel = 0; B.bob = 0; B.anchoring = 0; B.anchored = false; B.inAnch = false;
-  B.anchorX = 0; B.anchorY = 0; B.chainR = 6; B.anchorReady = false;
+  B.heel = 0; B.bob = 0;
   B.alive = true; B.dead = null; B.sinking = 0; B.stuck = 0;
   B.hull = HULL_MAX; B.invuln = 0; B.hitFlash = 0; B.leak = 0;
-  B.clearance = 9; B.scrapeCd = 0; B.warnCd = 0; B.creakCd = 0;
+  B.clearance = 9; B.scrapeCd = 0; B.creakCd = 0;
   L.trail.length = 0;
 }
 
@@ -101,44 +99,6 @@ function updateBoat(dt, t) {
       B.leak += dt;
       if (B.leak > 0.35) { B.leak = 0; spawnRipple(B.x - Math.cos(B.h) * 3, B.y - Math.sin(B.h) * 3, 0.3); }
     }
-    return;
-  }
-  if (B.anchored) {
-    // le bateau est mouill\u00e9 : il d\u00e9rive avec le courant + le vent mais
-    // est retenu par la cha\u00eene (rayon max depuis l'ancre). Il s'oriente
-    // face au vent (aval de la d\u00e9rive) rapidement.
-    const c = currentAt(B.x, B.y, t);
-    const wx = Math.cos(L.windFrom), wy = Math.sin(L.windFrom);
-    const lee = 0.40 * (L.windPow / 12) * (1 + B.sailUp * 0.5);
-    // vitesse imposee par courant + derive vent (pleine, pas d'attenuation)
-    let dvx = c[0] - wx * lee, dvy = c[1] - wy * lee;
-    // moteur + voile ajoutent de la vitesse propre
-    dvx += B.vx; dvy += B.vy;
-    B.x += dvx * dt; B.y += dvy * dt;
-    // blocage par la chaine : rayon max depuis l'ancre
-    const cdx = B.x - B.anchorX, cdy = B.y - B.anchorY;
-    const cd = Math.hypot(cdx, cdy);
-    if (cd > B.chainR) {
-      const k = B.chainR / cd;
-      B.x = B.anchorX + cdx * k;
-      B.y = B.anchorY + cdy * k;
-      // annule la composante sortante de la vitesse propre
-      if (cd > 0.01) {
-        const nx = cdx / cd, ny = cdy / cd;
-        const out = B.vx * nx + B.vy * ny;
-        if (out > 0) { B.vx -= out * nx; B.vy -= out * ny; }
-      }
-    }
-    B.vx *= Math.pow(0.5, dt); B.vy *= Math.pow(0.5, dt);
-    // orientation : la proue pointe vers l'amont de la derive combinee
-    // (courant + vent), comme un bateau sous l'ancre — face au vent si le
-    // vent domine, face au courant s'il domine. La chaine tire la proue
-    // vers l'ancre (amont de la derive).
-    if (Math.hypot(dvx, dvy) > 0.05) {
-      const targetH = Math.atan2(-dvy, -dvx);
-      B.h += angDiff(targetH, B.h) * Math.min(1, dt * 2.5);
-    }
-    B.bob = 0.1 * Math.sin(t * 1.9);
     return;
   }
 
@@ -391,46 +351,4 @@ function updateBoat(dt, t) {
     for (let i = 0; i < 7; i++) spawnSpray(B.x, B.y, 1.4);
   }
 
-  /* --------------------------- mouillage -------------------------------- */
-  // on peut mouiller partout dans le lagon. Le niveau n'est valid\u00e9 que si
-  // l'ancre est pos\u00e9e dans la zone d'arriv\u00e9e (B.inAnch). Hors de la zone,
-  // c'est un mouillage temporaire pour attendre une fen\u00eatre favorable
-  // ou laisser le moteur refroidir.
-  B.inAnch = Math.hypot(B.x - L.anch.x, B.y - L.anch.y) < L.anch.r;
-  B.warnCd -= dt;
-  // monter ou descendre la chaine requiert le moteur allume (pas en panne).
-  // le treuil tourne des que le diesel demarre : on n'attend pas la fin de
-  // la phase de demarrage (B.starting) pour pouvoir remonter l'ancre.
-  const engRun = B.engineOn && B.engineDead === 0;
-  if (B.anchored) {
-    // ancre posee : il faut avoir rel\u00e2ch\u00e9 A puis le rappuyer pour
-    // remonter (evite que le maintien qui a mouill\u00e9 ne d\u00e9croche aussit\u00f4t).
-    if (!Input.anchor) B.anchorReady = true;
-    else if (B.anchorReady) {
-      if (!engRun) {
-        if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE REMONTER L'ANCRE", 1.6); Snd.sBeep(false); }
-      } else {
-        B.anchored = false; B.anchoring = 0; B.anchorReady = false;
-        Game.flash("L'ANCRE EST REMONT\u00c9E", 1.5); Snd.sChain();
-      }
-    }
-  } else if (Input.anchor) {
-    B.anchorReady = false;
-    if (!engRun) {
-      B.anchoring = 0;
-      if (B.warnCd <= 0) { B.warnCd = 1.6; Game.flash("MOTEUR ÉTEINT — IMPOSSIBLE DE MOUILLER", 1.6); Snd.sBeep(false); }
-    } else if (speed > 0.514) {  // 1 kt : on mouille \u00e0 l'arr\u00eat
-      B.anchoring = 0;
-      if (B.warnCd <= 0) { B.warnCd = 1.4; Game.flash("TROP RAPIDE POUR MOUILLER — RALENTIS", 1.4); Snd.sBeep(false); }
-    } else {
-      B.anchoring += dt;
-      if (Math.random() < dt * 12) Snd.sChain();
-      if (B.anchoring > 1.6) {
-        B.anchored = true; B.anchorX = B.x; B.anchorY = B.y; B.anchoring = 0;
-        Snd.sAnchorSet();
-        if (B.inAnch) Game.win();
-        else Game.flash("ANCRE POS\u00c9E — REL\u00c2CHE ET RE-APPUYE POUR REMONTER", 3);
-      }
-    }
-  } else B.anchoring = Math.max(0, B.anchoring - dt * 1.6);
 }
