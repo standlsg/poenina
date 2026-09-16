@@ -1057,8 +1057,8 @@ function applyLight() {
     const r0 = lerp(28, 6, nt), r1 = lerp(70, 16, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(3,6,18,0)");
-    g.addColorStop(0.4, "rgba(2,5,15," + (1.0 * nt) + ")");
-    g.addColorStop(1, "rgba(2,5,15," + (1.05 * nt) + ")");
+    g.addColorStop(0.4, "rgba(2,5,15," + (1.08 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,15," + (1.12 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1118,53 +1118,43 @@ function drawSpotlight() {
   if (nt < 0.12 || !B.alive) return;
   const a = nt * (1 - B.sinking);
   const coneR = 44, coneDeg = 40, bowD = 5.6;
-  // Le projecteur est un SECTEUR DE DISQUE : un grand cercle de lumière
-  // centré sur la proue (bowD, 0), de rayon = portée (coneR), dont on
-  // n'affiche que coneDeg degrés (20° de chaque côté de l'axe avant).
-  // Le bout est l'arc de cercle du secteur lui-même -> convexe vers
-  // l'avant, calcul trigonométrique, pas un triangle à bout plaqué.
-  // Même techno que le halo du carré : 'lighter' (additif) réveille la
-  // luminosité du terrain déjà dessiné (déjà désaturé par applyLight).
-  const half = coneDeg * D2R / 2;          // demi-angle en radians
+  // Au lieu d'empiler un calque clair sur le voile noir (qui masque le
+  // terrain au lieu de le révéler), on PERCE le voile : on re-dessine le
+  // décor (eau + ombre + terre, couleurs d'origine) à l'intérieur du
+  // secteur du projecteur. Le terrain redevient visible tel quel dans le
+  // cône -> vraies couleurs, pas de voile jaune/gris par-dessus. Un fondu
+  // radial dissout le bord du cône dans la nuit.
+  const half = coneDeg * D2R / 2;
+  // origine du cône = proue, en coords écran.
+  const ox = sX(B.x + Math.cos(B.h) * bowD), oy = sY(B.y + Math.sin(B.h) * bowD);
+  const R = coneR * CFG.K;
+  const sectorPath = () => {
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.arc(ox, oy, R, -B.h - half, -B.h + half, false);
+    ctx.closePath();
+  };
   ctx.save();
-  ctx.translate(sX(B.x), sY(B.y));
-  ctx.rotate(-B.h);
-  ctx.scale(CFG.K, CFG.K);
-  // chemin du secteur : proue -> arc de cercle (rayon coneR, de -half à
-  // +half en passant par 0 = avant, sens horaire) -> proue.
-  ctx.beginPath();
-  ctx.moveTo(bowD, 0);
-  ctx.arc(bowD, 0, coneR, -half, half, false);
-  ctx.closePath();
-  ctx.save();
-  ctx.clip();
-  // restaure la chroma du terrain dans le secteur : la nuit (applyLight)
-  // a désaturé l'écran à 0.82*nt. On remonte la saturation à hauteur de
-  // 0.82*nt au centre (annule la désaturation -> vraies couleurs du
-  // terrain), fondu vers le bord du faisceau.
+  sectorPath(); ctx.clip();
+  // re-dessine le décor (couleurs pures d'origine) dans le secteur.
+  blit(TER.water, 0, 0); blit(TER.shade, 4, 5); blit(TER.land, 0, 0);
+  // désaturation modérée dans le cône : le terrain éclairé par un
+  // projecteur reste un peu atténué (pas le plein jour complet).
   ctx.globalCompositeOperation = "saturation";
-  const sg = ctx.createRadialGradient(bowD, 0, 0, bowD, 0, coneR);
-  sg.addColorStop(0, "rgba(255,128,64," + (0.82 * nt) + ")");
-  sg.addColorStop(0.7, "rgba(255,128,64," + (0.45 * nt) + ")");
-  sg.addColorStop(1, "rgba(255,128,64,0)");
-  ctx.fillStyle = sg;
-  ctx.beginPath();
-  ctx.arc(bowD, 0, coneR, -half, half, false);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-  // lueur chaude additive : 'lighter' réveille la luminosité du terrain.
-  ctx.globalCompositeOperation = "lighter";
-  const g = ctx.createRadialGradient(bowD, 0, 0, bowD, 0, coneR);
-  g.addColorStop(0, "rgba(255,238,206," + (0.34 * a) + ")");
-  g.addColorStop(0.6, "rgba(255,238,206," + (0.16 * a) + ")");
-  g.addColorStop(1, "rgba(255,238,206,0)");
-  ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.moveTo(bowD, 0);
-  ctx.arc(bowD, 0, coneR, -half, half, false);
-  ctx.closePath();
-  ctx.fill();
+  ctx.fillStyle = "rgb(128,128,128)";
+  ctx.globalAlpha = 0.40 * nt;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  // fondu radial du bord du cône vers la nuit : on garde le terrain
+  // plein près de la proue, on le dissout vers le bord du secteur.
+  ctx.globalCompositeOperation = "destination-in";
+  const fg = ctx.createRadialGradient(ox, oy, R * 0.2, ox, oy, R);
+  fg.addColorStop(0, "rgba(0,0,0,1)");
+  fg.addColorStop(0.7, "rgba(0,0,0,0.9)");
+  fg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "source-over";
   ctx.restore();
 }
 
