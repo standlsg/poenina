@@ -1034,21 +1034,30 @@ function coneOrigin() {
   return [sX(B.x + Math.cos(B.h) * SPOT.bowD), sY(B.y + Math.sin(B.h) * SPOT.bowD)];
 }
 function coneRadius() { return SPOT.coneR * CFG.K; }
-function spotlightPath() {
-  return function () {
-    const o = coneOrigin(), R = coneRadius(), h = coneHalf();
-    ctx.beginPath();
-    ctx.moveTo(o[0], o[1]);
-    ctx.arc(o[0], o[1], R, -B.h - h, -B.h + h, false);
-    ctx.closePath();
-  };
+// ajoute le secteur du projecteur AU chemin courant (sans beginPath) :
+// sert pour le clip evenodd (rectangle + secteur en trou).
+function addConeToPath() {
+  const o = coneOrigin(), R = coneRadius(), h = coneHalf();
+  ctx.moveTo(o[0], o[1]);
+  ctx.arc(o[0], o[1], R, -B.h - h, -B.h + h, false);
+  ctx.closePath();
+}
+// clip isolé sur le secteur seul (avec beginPath), pour les passes DANS
+// le cône (désaturation/assombrissement léger du terrain éclairé).
+function clipCone() {
+  const o = coneOrigin(), R = coneRadius(), h = coneHalf();
+  ctx.beginPath();
+  ctx.moveTo(o[0], o[1]);
+  ctx.arc(o[0], o[1], R, -B.h - h, -B.h + h, false);
+  ctx.closePath();
+  ctx.clip();
 }
 // clip 'tout l'écran SAUF le secteur du projecteur' (règle evenodd : le
 // rectangle plein + le secteur en trou -> le secteur est exclu du clip).
-function beginExcludeCone(pathFn) {
+function beginExcludeCone() {
   ctx.beginPath();
   ctx.rect(0, 0, W, H);
-  pathFn();
+  addConeToPath();
   ctx.clip("evenodd");
 }
 
@@ -1071,11 +1080,9 @@ function applyLight() {
      un rectangle plein + le secteur en trou). Pas de re-blit du décor. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    // chemin du secteur du projecteur (trou), en coords écran.
-    const conePath = spotlightPath();
     // passe 1 : désaturation forte (la nuit) sur tout SAUF le cône.
     ctx.save();
-    beginExcludeCone(conePath);
+    beginExcludeCone();
     ctx.globalCompositeOperation = "saturation";
     ctx.globalAlpha = 0.82 * nt;
     ctx.fillStyle = "rgb(128,128,128)";
@@ -1086,7 +1093,7 @@ function applyLight() {
     // désaturation modérée DANS le cône : le terrain éclairé reste atténué
     // (c'est la nuit), mais bien moins que le reste.
     ctx.save();
-    conePath(); ctx.clip();
+    clipCone();
     ctx.globalCompositeOperation = "saturation";
     ctx.globalAlpha = 0.40 * nt;
     ctx.fillStyle = "rgb(128,128,128)";
@@ -1102,13 +1109,13 @@ function applyLight() {
     g.addColorStop(0.4, "rgba(2,5,15," + (1.08 * nt) + ")");
     g.addColorStop(1, "rgba(2,5,15," + (1.12 * nt) + ")");
     ctx.save();
-    beginExcludeCone(conePath);
+    beginExcludeCone();
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     ctx.restore();
     // voile d'assombrissement léger DANS le cône (la nuit éclaire quand
     // même un peu moins), fondu radial pour dissoudre le bord du cône.
     ctx.save();
-    conePath(); ctx.clip();
+    clipCone();
     const ox = coneOrigin();
     const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.2, ox[0], ox[1], coneRadius());
     cg.addColorStop(0, "rgba(4,10,26," + (0.30 * nt) + ")");
