@@ -1051,11 +1051,14 @@ function applyLight() {
      projecteur avant percent le noir. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    const r0 = lerp(95, 4, nt), r1 = lerp(260, 12, nt);
-    const g = ctx.createRadialGradient(px, py, 0, px, py, r1);
-    g.addColorStop(0, "rgba(3,6,18," + (1.05 * nt) + ")");
-    g.addColorStop(0.3, "rgba(2,5,15," + (1.2 * nt) + ")");
-    g.addColorStop(1, "rgba(2,5,15," + (1.25 * nt) + ")");
+    // trou central modéré (zone que le halo habillera), puis quasi-noir
+    // partout ailleurs. nt plafonne à 0.80 (NIGHT_SUN=0.96) : on compense
+    // par ~1.2 pour atteindre ~0.96 d'opacité réelle sur la zone noire.
+    const r0 = lerp(28, 6, nt), r1 = lerp(70, 16, nt);
+    const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
+    g.addColorStop(0, "rgba(3,6,18,0)");
+    g.addColorStop(0.4, "rgba(2,5,15," + (1.15 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,15," + (1.2 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1075,14 +1078,16 @@ function drawNavLights() {
   ctx.translate(sX(B.x), sY(B.y));
   ctx.rotate(-B.h);
   ctx.scale(CFG.K, CFG.K);
-  // halo chaud du cockpit : composite 'lighter' pour percer le noir
+  // halo faible juste autour du cata : 'lighter' mais discret (plus
+  // faible que le projecteur), pour habiller le trou central laissé par
+  // applyLight sans révéler la map au loin.
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const hg = ctx.createRadialGradient(0, 0, 0.5, 0, 0, 3);
-  hg.addColorStop(0, "rgba(255,216,146," + (0.30 * a) + ")");
+  const hg = ctx.createRadialGradient(0, 0, 1, 0, 0, 8);
+  hg.addColorStop(0, "rgba(255,216,146," + (0.14 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(0, 0, 3, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill();
   ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
