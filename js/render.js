@@ -1125,21 +1125,41 @@ function drawSpotlight() {
   ctx.translate(sX(B.x), sY(B.y));
   ctx.rotate(-B.h);
   ctx.scale(CFG.K, CFG.K);
-  ctx.globalCompositeOperation = "lighter";
   // chemin du secteur : proue -> arc de cercle (rayon coneR, de -half à
   // +half en passant par 0 = avant, sens horaire) -> proue.
   ctx.beginPath();
   ctx.moveTo(bowD, 0);
   ctx.arc(bowD, 0, coneR, -half, half, false);
   ctx.closePath();
-  // dégradé radial centré sur la proue : plein près de la source,
-  // fondu vers le bord du secteur (comme le halo du carré, mais en
-  // secteur). La teinte chaude se dissout dans la nuit sans bord dur.
+  ctx.save();
+  ctx.clip();
+  // restaure la chroma du terrain dans le secteur à mi-chemin de sa
+  // valeur d'origine : la nuit (applyLight) a désaturé l'écran à 0.82*nt.
+  // On remonte la saturation de 0.41*nt (la moitié) via un composite
+  // 'saturation' avec une couleur saturée, dégradé radial pour fondre
+  // vers le bord du faisceau comme la lueur.
+  ctx.globalCompositeOperation = "saturation";
+  const sg = ctx.createRadialGradient(bowD, 0, 0, bowD, 0, coneR);
+  sg.addColorStop(0, "rgba(255,128,64," + (0.41 * nt) + ")");
+  sg.addColorStop(0.7, "rgba(255,128,64," + (0.25 * nt) + ")");
+  sg.addColorStop(1, "rgba(255,128,64,0)");
+  ctx.fillStyle = sg;
+  ctx.beginPath();
+  ctx.arc(bowD, 0, coneR, -half, half, false);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  // lueur chaude additive : 'lighter' réveille la luminosité du terrain.
+  ctx.globalCompositeOperation = "lighter";
   const g = ctx.createRadialGradient(bowD, 0, 0, bowD, 0, coneR);
   g.addColorStop(0, "rgba(255,238,206," + (0.34 * a) + ")");
   g.addColorStop(0.6, "rgba(255,238,206," + (0.16 * a) + ")");
   g.addColorStop(1, "rgba(255,238,206,0)");
   ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(bowD, 0);
+  ctx.arc(bowD, 0, coneR, -half, half, false);
+  ctx.closePath();
   ctx.fill();
   ctx.restore();
 }
