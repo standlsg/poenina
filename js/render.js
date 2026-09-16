@@ -1080,7 +1080,7 @@ function applyLight() {
      un rectangle plein + le secteur en trou). Pas de re-blit du décor. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    const HR = 13 * CFG.K;            // rayon du halo (m) -> pixels écran
+    const HR = 6.7 * CFG.K;           // rayon du halo : bateau + ~1 m du bord
     // passe 1 : désaturation. Forte (la nuit) au loin, atténuée au centre
     // (zone du halo) comme dans le cône -> le halo révèle le terrain coloré,
     // pas uniquement gris. Cône exclu (traité à part, modérément désaturé).
@@ -1117,15 +1117,19 @@ function applyLight() {
     beginExcludeCone();
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     ctx.restore();
-    // voile d'assombrissement léger DANS le cône (la nuit éclaire quand
-    // même un peu moins), fondu radial pour dissoudre le bord du cône.
+    // voile d'assombrissement DANS le cône (la nuit éclaire quand même un
+    // peu moins). Fondu radial comme le halo : transparent près de la
+    // source, s'épaissit vers le bout du cône puis se dissout dans la
+    // nuit au bord du secteur -> le bout du projecteur fond dans la nuit
+    // exactement comme le bord du halo jaune.
     ctx.save();
     clipCone();
     const ox = coneOrigin();
-    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.2, ox[0], ox[1], coneRadius());
-    cg.addColorStop(0, "rgba(4,10,26," + (0.30 * nt) + ")");
-    cg.addColorStop(0.7, "rgba(4,10,26," + (0.45 * nt) + ")");
-    cg.addColorStop(1, "rgba(4,10,26," + (0.7 * nt) + ")");
+    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.25, ox[0], ox[1], coneRadius() * 1.05);
+    cg.addColorStop(0, "rgba(4,10,26," + (0.16 * nt) + ")");
+    cg.addColorStop(0.55, "rgba(4,10,26," + (0.34 * nt) + ")");
+    cg.addColorStop(0.85, "rgba(4,10,26," + (0.62 * nt) + ")");
+    cg.addColorStop(1, "rgba(2,5,15," + (1.0 * nt) + ")");
     ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
     ctx.restore();
   } else if (L.sun > 0.5) {
@@ -1146,16 +1150,17 @@ function drawNavLights() {
   ctx.translate(sX(B.x), sY(B.y));
   ctx.rotate(-B.h);
   ctx.scale(CFG.K, CFG.K);
-  // halo faible juste autour du cata : 'lighter' mais discret (plus
-  // faible que le projecteur), pour habiller le trou central laissé par
-  // applyLight sans révéler la map au loin.
+  // halo faible juste autour du cata (bateau + ~1 m du bord) : 'lighter'
+  // discret, pour habiller le trou central laissé par applyLight sans
+  // révéler la map au loin. Le fondu radial du bord est repris pour le
+  // bout du projecteur.
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const hg = ctx.createRadialGradient(0, 0, 1, 0, 0, 13);
+  const hg = ctx.createRadialGradient(0, 0, 0.6, 0, 0, 6.7);
   hg.addColorStop(0, "rgba(255,216,146," + (0.26 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 6.7, 0, TAU); ctx.fill();
   ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
