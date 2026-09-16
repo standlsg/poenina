@@ -1080,7 +1080,7 @@ function applyLight() {
      un rectangle plein + le secteur en trou). Pas de re-blit du décor. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    const HR = 3 * CFG.K;             // rayon du halo : ~3 m autour du cata
+    const HR = 4.5 * CFG.K;           // rayon du halo : ~4.5 m autour du cata
     // passe 1 : désaturation. Forte (la nuit) au loin, atténuée au centre
     // (zone du halo) comme dans le cône -> le halo révèle le terrain coloré,
     // pas uniquement gris. Cône exclu (traité à part, modérément désaturé).
@@ -1117,19 +1117,20 @@ function applyLight() {
     beginExcludeCone();
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     ctx.restore();
-    // voile d'assombrissement DANS le cône (la nuit éclaire quand même un
-    // peu moins). Fondu radial comme le halo : transparent près de la
-    // source, s'épaissit vers le bout du cône puis se dissout dans la
-    // nuit au bord du secteur -> le bout du projecteur fond dans la nuit
-    // exactement comme le bord du halo jaune.
+    // voile d'assombrissement DANS le cône : dégradé radial qui part
+    // transparent près du bateau (terrain éclairé) et atteint EXACTEMENT
+    // l'opacité de la nuit (1.12*nt) au bord du secteur -> aucune ligne
+    // dure : le bout ET les flancs du cône fondent dans la nuit comme le
+    // bord du halo. Pas de saut d'opacité à la frontière du clip.
     ctx.save();
     clipCone();
     const ox = coneOrigin();
-    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.15, ox[0], ox[1], coneRadius() * 1.4);
+    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.12, ox[0], ox[1], coneRadius());
     cg.addColorStop(0, "rgba(4,10,26," + (0.10 * nt) + ")");
-    cg.addColorStop(0.45, "rgba(4,10,26," + (0.30 * nt) + ")");
-    cg.addColorStop(0.75, "rgba(4,10,26," + (0.62 * nt) + ")");
-    cg.addColorStop(1, "rgba(2,5,15," + (1.1 * nt) + ")");
+    cg.addColorStop(0.35, "rgba(4,10,26," + (0.22 * nt) + ")");
+    cg.addColorStop(0.6, "rgba(4,10,26," + (0.50 * nt) + ")");
+    cg.addColorStop(0.85, "rgba(3,8,20," + (0.95 * nt) + ")");
+    cg.addColorStop(1, "rgba(2,5,15," + (1.12 * nt) + ")");
     ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
     ctx.restore();
   } else if (L.sun > 0.5) {
@@ -1156,11 +1157,11 @@ function drawNavLights() {
   // bout du projecteur.
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const hg = ctx.createRadialGradient(0, 0, 0.3, 0, 0, 3);
+  const hg = ctx.createRadialGradient(0, 0, 0.4, 0, 0, 4.5);
   hg.addColorStop(0, "rgba(255,216,146," + (0.26 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(0, 0, 3, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 4.5, 0, TAU); ctx.fill();
   ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
