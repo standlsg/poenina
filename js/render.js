@@ -1080,7 +1080,7 @@ function applyLight() {
      un rectangle plein + le secteur en trou). Pas de re-blit du décor. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    const HR = 6.7 * CFG.K;           // rayon du halo : bateau + ~1 m du bord
+    const HR = 3 * CFG.K;             // rayon du halo : ~3 m autour du cata
     // passe 1 : désaturation. Forte (la nuit) au loin, atténuée au centre
     // (zone du halo) comme dans le cône -> le halo révèle le terrain coloré,
     // pas uniquement gris. Cône exclu (traité à part, modérément désaturé).
@@ -1125,11 +1125,11 @@ function applyLight() {
     ctx.save();
     clipCone();
     const ox = coneOrigin();
-    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.25, ox[0], ox[1], coneRadius() * 1.05);
-    cg.addColorStop(0, "rgba(4,10,26," + (0.16 * nt) + ")");
-    cg.addColorStop(0.55, "rgba(4,10,26," + (0.34 * nt) + ")");
-    cg.addColorStop(0.85, "rgba(4,10,26," + (0.62 * nt) + ")");
-    cg.addColorStop(1, "rgba(2,5,15," + (1.0 * nt) + ")");
+    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.15, ox[0], ox[1], coneRadius() * 1.4);
+    cg.addColorStop(0, "rgba(4,10,26," + (0.10 * nt) + ")");
+    cg.addColorStop(0.45, "rgba(4,10,26," + (0.30 * nt) + ")");
+    cg.addColorStop(0.75, "rgba(4,10,26," + (0.62 * nt) + ")");
+    cg.addColorStop(1, "rgba(2,5,15," + (1.1 * nt) + ")");
     ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
     ctx.restore();
   } else if (L.sun > 0.5) {
@@ -1156,11 +1156,11 @@ function drawNavLights() {
   // bout du projecteur.
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const hg = ctx.createRadialGradient(0, 0, 0.6, 0, 0, 6.7);
+  const hg = ctx.createRadialGradient(0, 0, 0.3, 0, 0, 3);
   hg.addColorStop(0, "rgba(255,216,146," + (0.26 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(0, 0, 6.7, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 3, 0, TAU); ctx.fill();
   ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
