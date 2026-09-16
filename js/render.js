@@ -1051,11 +1051,11 @@ function applyLight() {
      projecteur avant percent le noir. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    const r0 = lerp(190, 8, nt), r1 = lerp(520, 24, nt);
+    const r0 = lerp(95, 4, nt), r1 = lerp(260, 12, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(5,11,30,0)");
-    g.addColorStop(0.5, "rgba(4,8,24," + (0.7 * nt) + ")");
-    g.addColorStop(1, "rgba(3,6,20," + (0.99 * nt) + ")");
+    g.addColorStop(0.5, "rgba(4,8,24," + (0.84 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,16," + (1.0 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1100,29 +1100,63 @@ function drawNavLights() {
   // carré éclairé
   ctx.fillStyle = "rgba(255,208,124," + (0.26 * a) + ")";
   rr(ctx, -1.85, -1.9, 3.8, 3.8, 0.7); ctx.fill();
-  // projecteur avant : cône de lumière vers l'avant, au-delà du halo de
-  // visibilité nocturne. Composite 'lighter' pour éclairer vraiment le noir.
-  const coneR = 44, coneHalf = 0.40;
-  ctx.save();
-  ctx.globalCompositeOperation = "lighter";
-  ctx.beginPath();
-  ctx.moveTo(5.6, 0);
-  ctx.lineTo(5.6 + coneR, -coneR * coneHalf);
-  ctx.lineTo(5.6 + coneR, coneR * coneHalf);
-  ctx.closePath();
-  const cg = ctx.createLinearGradient(5.6, 0, 5.6 + coneR, 0);
-  cg.addColorStop(0, "rgba(255,236,184," + (0.34 * a) + ")");
-  cg.addColorStop(0.6, "rgba(255,236,184," + (0.14 * a) + ")");
-  cg.addColorStop(1, "rgba(255,236,184,0)");
-  ctx.fillStyle = cg;
-  ctx.fill();
-  // restaure une partie de la couleur/saturation dans le cône (la nuit
-  // appliqueLight a désaturé l'écran) : composite 'color' avec une teinte
-  // chaude, moitié du plein jour.
-  ctx.globalCompositeOperation = "color";
-  ctx.fillStyle = "rgba(255,238,200," + (0.45 * a) + ")";
-  ctx.fill();
   ctx.restore();
+}
+
+/* projecteur avant : redessine le décor (encore coloré sous le voile) dans
+   un masque en cône vers l'avant, puis le désature à moitié pour
+   révéler les vraies couleurs du terrain, atténuées. Tracé APRÈS
+   applyLight (qui a désaturé/voilé l'écran) ; on repeint donc par-dessus
+   le noir, en coordonnées écran. */
+function drawSpotlight() {
+  const nt = nightAmount();
+  if (nt < 0.12 || !B.alive) return;
+  const a = nt * (1 - B.sinking);
+  const coneR = 44, coneHalf = 0.40, bowD = 5.6;
+  // origine du cône = proue du bateau, en coords écran.
+  const ox = sX(B.x + Math.cos(B.h) * bowD), oy = sY(B.y + Math.sin(B.h) * bowD);
+  const dir = -B.h;                       // vers l'avant à l'écran (y inversé)
+  const fx = Math.cos(dir), fy = Math.sin(dir);
+  const nx = -fy, ny = fx;
+  const R = coneR * CFG.K;
+  // chemin du cône (en pixels) pour servir de masque.
+  const conePath = () => {
+    ctx.beginPath();
+    ctx.moveTo(ox, oy);
+    ctx.lineTo(ox + fx * R + nx * R * coneHalf, oy + fy * R + ny * R * coneHalf);
+    ctx.lineTo(ox + fx * R - nx * R * coneHalf, oy + fy * R - ny * R * coneHalf);
+    ctx.closePath();
+  };
+  ctx.save();
+  // fond opaque = noir de la nuit ; on repeint le décor par-dessus.
+  conePath(); ctx.clip();
+  ctx.fillStyle = "rgb(2,5,16)"; ctx.fillRect(0, 0, W, H);
+  blit(TER.water, 0, 0); blit(TER.shade, 4, 5); blit(TER.land, 0, 0);
+  // désaturation modérée du décor ainsi révélé : mi-chemin entre la nuit
+  // (0.82) et le plein jour (0). Reste des couleurs mais atténuées.
+  ctx.globalCompositeOperation = "saturation";
+  ctx.fillStyle = "rgb(128,128,128)";
+  ctx.globalAlpha = 0.45 * nt;
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = "source-over";
+  // adoucit le bord du cône : fondu vers le noir sur les flancs.
+  ctx.globalCompositeOperation = "destination-in";
+  const fg = ctx.createLinearGradient(ox, oy, ox + fx * R, oy + fy * R);
+  fg.addColorStop(0, "rgba(0,0,0,1)");
+  fg.addColorStop(0.75, "rgba(0,0,0,0.92)");
+  fg.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = "source-over";
+  ctx.restore();
+  // légère lueur blanche additionnelle au cône pour le faire "briller".
+  ctx.save();
+  conePath(); ctx.clip();
+  ctx.globalCompositeOperation = "lighter";
+  const cg = ctx.createLinearGradient(ox, oy, ox + fx * R, oy + fy * R);
+  cg.addColorStop(0, "rgba(255,255,250," + (0.10 * a) + ")");
+  cg.addColorStop(1, "rgba(255,255,250,0)");
+  ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
   ctx.restore();
 }
 
@@ -1458,6 +1492,7 @@ function drawWorld(t) {
   drawBoat(t);
   drawParts();
   applyLight();
+  drawSpotlight();
   drawNavLights();
   drawBird(t);
   drawRain(t);
