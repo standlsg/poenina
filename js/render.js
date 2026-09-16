@@ -1080,14 +1080,18 @@ function applyLight() {
      un rectangle plein + le secteur en trou). Pas de re-blit du décor. */
   if (nt > 0.01) {
     const px = sX(B.x), py = sY(B.y);
-    // passe 1 : désaturation forte (la nuit) sur tout SAUF le cône.
+    const HR = 13 * CFG.K;            // rayon du halo (m) -> pixels écran
+    // passe 1 : désaturation. Forte (la nuit) au loin, atténuée au centre
+    // (zone du halo) comme dans le cône -> le halo révèle le terrain coloré,
+    // pas uniquement gris. Cône exclu (traité à part, modérément désaturé).
     ctx.save();
     beginExcludeCone();
     ctx.globalCompositeOperation = "saturation";
-    ctx.globalAlpha = 0.82 * nt;
-    ctx.fillStyle = "rgb(128,128,128)";
+    const dg = ctx.createRadialGradient(px, py, HR, px, py, HR * 2.6);
+    dg.addColorStop(0, "rgba(128,128,128," + (0.40 * nt) + ")");
+    dg.addColorStop(1, "rgba(128,128,128," + (0.82 * nt) + ")");
+    ctx.fillStyle = dg;
     ctx.fillRect(0, 0, W, H);
-    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
     ctx.restore();
     // désaturation modérée DANS le cône : le terrain éclairé reste atténué
@@ -1101,12 +1105,13 @@ function applyLight() {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
     ctx.restore();
-    // passe 2 : voile noir radial. Trou central modéré (zone du halo),
-    // quasi-noir partout ailleurs SAUF le cône du projecteur.
-    const r0 = lerp(28, 6, nt), r1 = lerp(70, 16, nt);
-    const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
+    // passe 2 : voile noir radial. Transparent au centre (le halo révèle le
+    // terrain comme le cône), quasi-noir au loin. Cône exclu (voile léger
+    // propre appliqué à part). La lueur jaune du halo est tracée après en
+    // 'lighter', donc elle n'est pas sacrifiée.
+    const g = ctx.createRadialGradient(px, py, 0, px, py, HR * 2.4);
     g.addColorStop(0, "rgba(3,6,18,0)");
-    g.addColorStop(0.4, "rgba(2,5,15," + (1.08 * nt) + ")");
+    g.addColorStop(0.42, "rgba(2,5,15," + (0.30 * nt) + ")");
     g.addColorStop(1, "rgba(2,5,15," + (1.12 * nt) + ")");
     ctx.save();
     beginExcludeCone();
