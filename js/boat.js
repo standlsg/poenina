@@ -208,7 +208,7 @@ function updateBoat(dt, t) {
   const sailEff = (sailHoisted && B.twa >= 55) ? sailF : 0;
   const hasProp = thrust > 0.01 || sailEff > 0.01;
   const intoWind = sailHoisted && B.twa < 55;       // virement : voile hissée face au vent
-   const noProp = !hasProp && !intoWind;             // moteur coupé ET voile affalée = ancre flottante
+  const noProp = !hasProp && !intoWind;             // moteur coupé ET voile affalée = ancre flottante
   /* À l'arrêt sans propulsion effective (ancre flottante, ou virement
      raté figé face au vent) le bateau doit loffer travers à la dérive.
      On garde le freinage pour noProp seul, mais la loffe travers se
@@ -235,11 +235,11 @@ function updateBoat(dt, t) {
   /* ---------------------------- forces --------------------------------- */
   let ax = fwx * (thrust + sailEff), ay = fwy * (thrust + sailEff);
   const vf = B.vx * fwx + B.vy * fwy, vl = -B.vx * fwy + B.vy * fwx;
-   const df = -0.068 * vf * Math.abs(vf) - 0.10 * vf;
+  const df = -0.068 * vf * Math.abs(vf) - 0.10 * vf;
   const dl = -0.62 * vl * Math.abs(vl) - 0.95 * vl;
   ax += fwx * df - fwy * dl; ay += fwy * df + fwx * dl;
 
-   /* Sans propulsion (ancre flottante : moteur coupé ET voile affalée) :
+  /* Sans propulsion (ancre flottante : moteur coupé ET voile affalée) :
      l'erre décroît à 30 %/s. Pendant un virement (intoWind) on ne
      l'applique pas : la traînée hydrodynamique normale ralentit le
      bateau face au vent tout en gardant assez d'erre pour franchir
@@ -272,7 +272,7 @@ function updateBoat(dt, t) {
  /* Sans propulsion et presque à l'arrêt : le bateau présente son flanc à
      la dérive (ancre flottante). Il loffe travers à la dérive combinée
      vent+courant à vitesse fixe (~1 rad/s → 180° en ~3 s).         */
- if (driftAlign && Math.hypot(B.vx, B.vy) < 0.3) {
+  if (driftAlign && Math.hypot(B.vx, B.vy) < 0.3) {
     const driftDir = Math.atan2(B.ly + B.cy, B.lx + B.cx);
     let target = driftDir + Math.PI / 2;     // travers = perpendiculaire à la dérive
     if (Math.abs(angDiff(target, B.h)) > Math.PI / 2) target += Math.PI;  // côté le plus court
@@ -458,11 +458,8 @@ function updateBoat(dt, t) {
 
   // --- dynamique sous l'ancre (remplace le déplacement normal) ---
   if (B.anchored) {
-    const c = currentAt(B.x, B.y, t);
-    const wx = Math.cos(L.windFrom), wy = Math.sin(L.windFrom);
-    const lee = 0.40 * (L.windPow / 12) * (1 + B.sailUp * 0.5);
-    // vitesse imposée par courant + dérive vent (pleine, pas d'atténuation)
-    let dvx = c[0] - wx * lee, dvy = c[1] - wy * lee;
+    // courant (B.cx/cy) et dérive vent (B.lx/ly) déjà calculés plus haut
+    let dvx = B.cx + B.lx, dvy = B.cy + B.ly;
     const bowD = 5.6;
     if (motProp) {
       // état 3 — propulsion moteur : on garde la vitesse propre du bateau

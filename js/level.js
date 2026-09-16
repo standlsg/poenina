@@ -258,10 +258,11 @@ function buildLevel(n, seedExtra) {
     guard = 0;
     while (L.sandP.length < S.sandPatches && guard < S.sandPatches * 400) {
       guard++;
-      const y = 20 + rng() * (S.len - 42);
+      const y = 30 + rng() * (S.len - 60);
       const sx = L.shoreX(y), rx = L.reefX(y);
       const x = sx + 18 + rng() * (rx - sx - 34);
       const r = 12 + rng() * 20;
+      if (Math.hypot(x - L.start.x, y - L.start.y) < r + 10) continue;
       if (L.pat.some(p => Math.hypot(p.x - x, p.y - y) < p.r + r + 2)) continue;
       L.sandP.push({
         x, y, r, peak: 1.35 + rng() * 1.7,
@@ -287,7 +288,16 @@ function buildLevel(n, seedExtra) {
   const u = clamp((n - 1) / (CFG.MAXLEVEL - 1), 0, 1);
   const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
   L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
-  L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
+  if (L.night) {
+    // Niveau nocturne : brise de terre de biais, vent qui souffle vers la
+    // diagonale bas-droite de l'écran (+x mer, -y). Il vient donc de -x
+    // (la terre) et +y (cap 3π/4) -> twa = 45° avec le cap π/2 du bateau :
+    // du près, il faut tirer des bords.
+    L.windFrom = 3 * Math.PI / 4;
+    L.windTwa = 45;
+  } else {
+    L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
+  }
   L.windFrom0 = L.windFrom;          // cap de référence pour la dérive lente
   L.windDrift = (rng() < 0.5 ? 1 : -1) * (0.014 + 0.012 * n / CFG.MAXLEVEL); // rad/s
   L.windPow0 = S.windPow;              // vent nominal (brise de mer établie)

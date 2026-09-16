@@ -158,7 +158,7 @@ function updateFishers(dt, t) {
       const tx = sx + 6;                       // juste au ras du rivage
       const dx = tx - f.x;
       if (Math.abs(dx) < 1.2) { f.beached = true; f.x = tx; }
-      else { f.h = dx > 0 ? 0 : Math.PI; f.x += Math.sign(dx) * 1.4 * dt; f.y += 0; }
+      else { f.h = dx > 0 ? 0 : Math.PI; f.x += Math.sign(dx) * 1.4 * dt; }
       continue;
     }
     const px0 = f.x, py0 = f.y;
