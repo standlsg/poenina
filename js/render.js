@@ -1057,8 +1057,8 @@ function applyLight() {
     const r0 = lerp(28, 6, nt), r1 = lerp(70, 16, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(3,6,18,0)");
-    g.addColorStop(0.4, "rgba(2,5,15," + (1.15 * nt) + ")");
-    g.addColorStop(1, "rgba(2,5,15," + (1.2 * nt) + ")");
+    g.addColorStop(0.4, "rgba(2,5,15," + (1.0 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,15," + (1.05 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1083,11 +1083,11 @@ function drawNavLights() {
   // applyLight sans révéler la map au loin.
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const hg = ctx.createRadialGradient(0, 0, 1, 0, 0, 8);
-  hg.addColorStop(0, "rgba(255,216,146," + (0.14 * a) + ")");
+  const hg = ctx.createRadialGradient(0, 0, 1, 0, 0, 13);
+  hg.addColorStop(0, "rgba(255,216,146," + (0.26 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(0, 0, 8, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fill();
   ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
@@ -1138,15 +1138,14 @@ function drawSpotlight() {
   ctx.closePath();
   ctx.save();
   ctx.clip();
-  // restaure la chroma du terrain dans le secteur à mi-chemin de sa
-  // valeur d'origine : la nuit (applyLight) a désaturé l'écran à 0.82*nt.
-  // On remonte la saturation de 0.41*nt (la moitié) via un composite
-  // 'saturation' avec une couleur saturée, dégradé radial pour fondre
-  // vers le bord du faisceau comme la lueur.
+  // restaure la chroma du terrain dans le secteur : la nuit (applyLight)
+  // a désaturé l'écran à 0.82*nt. On remonte la saturation à hauteur de
+  // 0.82*nt au centre (annule la désaturation -> vraies couleurs du
+  // terrain), fondu vers le bord du faisceau.
   ctx.globalCompositeOperation = "saturation";
   const sg = ctx.createRadialGradient(bowD, 0, 0, bowD, 0, coneR);
-  sg.addColorStop(0, "rgba(255,128,64," + (0.41 * nt) + ")");
-  sg.addColorStop(0.7, "rgba(255,128,64," + (0.25 * nt) + ")");
+  sg.addColorStop(0, "rgba(255,128,64," + (0.82 * nt) + ")");
+  sg.addColorStop(0.7, "rgba(255,128,64," + (0.45 * nt) + ")");
   sg.addColorStop(1, "rgba(255,128,64,0)");
   ctx.fillStyle = sg;
   ctx.beginPath();
