@@ -289,12 +289,13 @@ function buildLevel(n, seedExtra) {
   const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
   L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
   if (L.night) {
-    // Niveau nocturne : brise de terre de biais, vent qui souffle vers la
-    // diagonale bas-droite de l'écran (+x mer, -y). Il vient donc de -x
-    // (la terre) et +y (cap 3π/4) -> twa = 45° avec le cap π/2 du bateau :
+    // Niveau nocturne : brise de terre de biais. Vent venant du 315° (cap
+    // boussole écran), entre 300° et 330°. En convention monde (cap boussole
+    // = 90 - windFrom_deg) ça donne windFrom ∈ [2π/3, 5π/6] -> souffle vers
+    // la diagonale bas-droite. Avec le cap π/2 du bateau, twa = 30-60° :
     // du près, il faut tirer des bords.
-    L.windFrom = 3 * Math.PI / 4;
-    L.windTwa = 45;
+    L.windFrom = lerp(2 * Math.PI / 3, 5 * Math.PI / 6, rng());
+    L.windTwa = (L.windFrom - Math.PI / 2) * R2D;
   } else {
     L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
   }
