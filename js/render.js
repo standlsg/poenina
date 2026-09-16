@@ -1053,9 +1053,9 @@ function applyLight() {
     const px = sX(B.x), py = sY(B.y);
     const r0 = lerp(95, 4, nt), r1 = lerp(260, 12, nt);
     const g = ctx.createRadialGradient(px, py, 0, px, py, r1);
-    g.addColorStop(0, "rgba(3,6,18," + (0.86 * nt) + ")");
-    g.addColorStop(0.35, "rgba(2,5,15," + (0.97 * nt) + ")");
-    g.addColorStop(1, "rgba(2,5,15," + (1.0 * nt) + ")");
+    g.addColorStop(0, "rgba(3,6,18," + (1.05 * nt) + ")");
+    g.addColorStop(0.3, "rgba(2,5,15," + (1.2 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,15," + (1.25 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
@@ -1078,11 +1078,11 @@ function drawNavLights() {
   // halo chaud du cockpit : composite 'lighter' pour percer le noir
   ctx.save();
   ctx.globalCompositeOperation = "lighter";
-  const hg = ctx.createRadialGradient(0, 0, 1, 0, 0, 13);
-  hg.addColorStop(0, "rgba(255,216,146," + (0.26 * a) + ")");
+  const hg = ctx.createRadialGradient(0, 0, 0.5, 0, 0, 3);
+  hg.addColorStop(0, "rgba(255,216,146," + (0.30 * a) + ")");
   hg.addColorStop(1, "rgba(255,216,146,0)");
   ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(0, 0, 13, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, 3, 0, TAU); ctx.fill();
   ctx.restore();
   const lamp = (x, y, col, r) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3.4);
