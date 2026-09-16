@@ -1054,7 +1054,8 @@ function applyLight() {
     const r0 = lerp(95, 4, nt), r1 = lerp(260, 12, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(5,11,30,0)");
-    g.addColorStop(0.5, "rgba(4,8,24," + (0.84 * nt) + ")");
+    g.addColorStop(0.15, "rgba(4,8,22," + (0.20 * nt) + ")");
+    g.addColorStop(0.5, "rgba(3,7,20," + (1.0 * nt) + ")");
     g.addColorStop(1, "rgba(2,5,16," + (1.0 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
