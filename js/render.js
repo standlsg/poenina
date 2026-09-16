@@ -1119,16 +1119,24 @@ function drawSpotlight() {
   const fx = Math.cos(dir), fy = Math.sin(dir);
   const nx = -fy, ny = fx;
   const R = coneR * CFG.K;
-  // chemin du cône (en pixels) pour servir de masque.
+  const half = R * coneHalf;
+  // bout du cône arrondi : arc de cercle de rayon `half` entre les deux
+  // coins, au lieu d'un segment plat.
+  const tipX = ox + fx * R, tipY = oy + fy * R;
+  const p1x = tipX + nx * half, p1y = tipY + ny * half;
+  const p2x = tipX - nx * half, p2y = tipY - ny * half;
+  // angle des deux coins vus depuis le bout (pour l'arc) :
+  const a1 = Math.atan2(p1y - tipY, p1x - tipX);
+  const a2 = Math.atan2(p2y - tipY, p2x - tipX);
+  // chemin du cône à bout rond (en pixels) pour servir de masque.
   const conePath = () => {
     ctx.beginPath();
     ctx.moveTo(ox, oy);
-    ctx.lineTo(ox + fx * R + nx * R * coneHalf, oy + fy * R + ny * R * coneHalf);
-    ctx.lineTo(ox + fx * R - nx * R * coneHalf, oy + fy * R - ny * R * coneHalf);
+    ctx.lineTo(p1x, p1y);
+    ctx.arc(tipX, tipY, half, a1, a2, false);
     ctx.closePath();
   };
   ctx.save();
-  // fond opaque = noir de la nuit ; on repeint le décor par-dessus.
   conePath(); ctx.clip();
   ctx.fillStyle = "rgb(2,5,16)"; ctx.fillRect(0, 0, W, H);
   blit(TER.water, 0, 0); blit(TER.shade, 4, 5); blit(TER.land, 0, 0);
@@ -1140,11 +1148,16 @@ function drawSpotlight() {
   ctx.fillRect(0, 0, W, H);
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = "source-over";
-  // adoucit le bord du cône : fondu vers le noir sur les flancs.
+  // léger voile gris qui atténue la luminosité du cône (rend la lumière
+  // moins crue, plus diffuse).
+  ctx.fillStyle = "rgba(60,68,80," + (0.30 * nt) + ")";
+  ctx.fillRect(0, 0, W, H);
+  // fondu vers le transparent sur les flancs et le bout : dégradé radial
+  // centré sur l'origine, transparent hors du cône, plein au centre.
   ctx.globalCompositeOperation = "destination-in";
-  const fg = ctx.createLinearGradient(ox, oy, ox + fx * R, oy + fy * R);
+  const fg = ctx.createRadialGradient(ox, oy, R * 0.15, ox, oy, R);
   fg.addColorStop(0, "rgba(0,0,0,1)");
-  fg.addColorStop(0.75, "rgba(0,0,0,0.92)");
+  fg.addColorStop(0.7, "rgba(0,0,0,0.92)");
   fg.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
   ctx.globalCompositeOperation = "source-over";
@@ -1153,8 +1166,8 @@ function drawSpotlight() {
   ctx.save();
   conePath(); ctx.clip();
   ctx.globalCompositeOperation = "lighter";
-  const cg = ctx.createLinearGradient(ox, oy, ox + fx * R, oy + fy * R);
-  cg.addColorStop(0, "rgba(255,255,250," + (0.10 * a) + ")");
+  const cg = ctx.createLinearGradient(ox, oy, tipX, tipY);
+  cg.addColorStop(0, "rgba(255,255,250," + (0.08 * a) + ")");
   cg.addColorStop(1, "rgba(255,255,250,0)");
   ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
   ctx.restore();
