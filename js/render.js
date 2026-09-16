@@ -1027,6 +1027,31 @@ function drawParts() {
   }
 }
 
+/* ------------------------ projecteur (helpers géométrie) ---------------- */
+const SPOT = { coneR: 44, coneDeg: 40, bowD: 5.6 };
+function coneHalf() { return SPOT.coneDeg * D2R / 2; }
+function coneOrigin() {
+  return [sX(B.x + Math.cos(B.h) * SPOT.bowD), sY(B.y + Math.sin(B.h) * SPOT.bowD)];
+}
+function coneRadius() { return SPOT.coneR * CFG.K; }
+function spotlightPath() {
+  return function () {
+    const o = coneOrigin(), R = coneRadius(), h = coneHalf();
+    ctx.beginPath();
+    ctx.moveTo(o[0], o[1]);
+    ctx.arc(o[0], o[1], R, -B.h - h, -B.h + h, false);
+    ctx.closePath();
+  };
+}
+// clip 'tout l'écran SAUF le secteur du projecteur' (règle evenodd : le
+// rectangle plein + le secteur en trou -> le secteur est exclu du clip).
+function beginExcludeCone(pathFn) {
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  pathFn();
+  ctx.clip("evenodd");
+}
+
 /* ------------------------ lumière du moment ---------------------------- */
 function applyLight() {
   const s = SUN, nt = nightAmount();
@@ -1037,29 +1062,60 @@ function applyLight() {
   }
   if (s.va > 0.003) { ctx.fillStyle = rgba(s.veil, s.va); ctx.fillRect(0, 0, W, H); }
 
-  /* la nuit : on perd les couleurs… */
+  /* la nuit : on perd les couleurs… et la vue ne porte plus qu'autour du
+     bateau. Le projecteur avant EXCLUT son cône du voile : le terrain
+     reste visible dans le cône (couleurs d'origine, mais désaturées et
+     légèrement assombries car c'est quand même la nuit), alors que le
+     reste de la map est quasi noir. On clip le voile et la désaturation
+     avec un masque 'tout sauf le secteur du projecteur' (règle evenodd :
+     un rectangle plein + le secteur en trou). Pas de re-blit du décor. */
   if (nt > 0.01) {
+    const px = sX(B.x), py = sY(B.y);
+    // chemin du secteur du projecteur (trou), en coords écran.
+    const conePath = spotlightPath();
+    // passe 1 : désaturation forte (la nuit) sur tout SAUF le cône.
     ctx.save();
+    beginExcludeCone(conePath);
     ctx.globalCompositeOperation = "saturation";
     ctx.globalAlpha = 0.82 * nt;
     ctx.fillStyle = "rgb(128,128,128)";
     ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
     ctx.restore();
-  }
-  /* …et la vue ne porte plus qu'autour du bateau. La nuit, l'obscurité
-     vient très près : seul le cockpit (halo chaud, dessiné après) et le
-     projecteur avant percent le noir. */
-  if (nt > 0.01) {
-    const px = sX(B.x), py = sY(B.y);
-    // trou central modéré (zone que le halo habillera), puis quasi-noir
-    // partout ailleurs. nt plafonne à 0.80 (NIGHT_SUN=0.96) : on compense
-    // par ~1.2 pour atteindre ~0.96 d'opacité réelle sur la zone noire.
+    // désaturation modérée DANS le cône : le terrain éclairé reste atténué
+    // (c'est la nuit), mais bien moins que le reste.
+    ctx.save();
+    conePath(); ctx.clip();
+    ctx.globalCompositeOperation = "saturation";
+    ctx.globalAlpha = 0.40 * nt;
+    ctx.fillStyle = "rgb(128,128,128)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
+    // passe 2 : voile noir radial. Trou central modéré (zone du halo),
+    // quasi-noir partout ailleurs SAUF le cône du projecteur.
     const r0 = lerp(28, 6, nt), r1 = lerp(70, 16, nt);
     const g = ctx.createRadialGradient(px, py, r0, px, py, r1);
     g.addColorStop(0, "rgba(3,6,18,0)");
     g.addColorStop(0.4, "rgba(2,5,15," + (1.08 * nt) + ")");
     g.addColorStop(1, "rgba(2,5,15," + (1.12 * nt) + ")");
+    ctx.save();
+    beginExcludeCone(conePath);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // voile d'assombrissement léger DANS le cône (la nuit éclaire quand
+    // même un peu moins), fondu radial pour dissoudre le bord du cône.
+    ctx.save();
+    conePath(); ctx.clip();
+    const ox = coneOrigin();
+    const cg = ctx.createRadialGradient(ox[0], ox[1], coneRadius() * 0.2, ox[0], ox[1], coneRadius());
+    cg.addColorStop(0, "rgba(4,10,26," + (0.30 * nt) + ")");
+    cg.addColorStop(0.7, "rgba(4,10,26," + (0.45 * nt) + ")");
+    cg.addColorStop(1, "rgba(4,10,26," + (0.7 * nt) + ")");
+    ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
     const g = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.95);
@@ -1105,56 +1161,6 @@ function drawNavLights() {
   // carré éclairé
   ctx.fillStyle = "rgba(255,208,124," + (0.26 * a) + ")";
   rr(ctx, -1.85, -1.9, 3.8, 3.8, 0.7); ctx.fill();
-  ctx.restore();
-}
-
-/* projecteur avant : redessine le décor (encore coloré sous le voile) dans
-   un masque en cône vers l'avant, puis le désature à moitié pour
-   révéler les vraies couleurs du terrain, atténuées. Tracé APRÈS
-   applyLight (qui a désaturé/voilé l'écran) ; on repeint donc par-dessus
-   le noir, en coordonnées écran. */
-function drawSpotlight() {
-  const nt = nightAmount();
-  if (nt < 0.12 || !B.alive) return;
-  const a = nt * (1 - B.sinking);
-  const coneR = 44, coneDeg = 40, bowD = 5.6;
-  // Au lieu d'empiler un calque clair sur le voile noir (qui masque le
-  // terrain au lieu de le révéler), on PERCE le voile : on re-dessine le
-  // décor (eau + ombre + terre, couleurs d'origine) à l'intérieur du
-  // secteur du projecteur. Le terrain redevient visible tel quel dans le
-  // cône -> vraies couleurs, pas de voile jaune/gris par-dessus. Un fondu
-  // radial dissout le bord du cône dans la nuit.
-  const half = coneDeg * D2R / 2;
-  // origine du cône = proue, en coords écran.
-  const ox = sX(B.x + Math.cos(B.h) * bowD), oy = sY(B.y + Math.sin(B.h) * bowD);
-  const R = coneR * CFG.K;
-  const sectorPath = () => {
-    ctx.beginPath();
-    ctx.moveTo(ox, oy);
-    ctx.arc(ox, oy, R, -B.h - half, -B.h + half, false);
-    ctx.closePath();
-  };
-  ctx.save();
-  sectorPath(); ctx.clip();
-  // re-dessine le décor (couleurs pures d'origine) dans le secteur.
-  blit(TER.water, 0, 0); blit(TER.shade, 4, 5); blit(TER.land, 0, 0);
-  // désaturation modérée dans le cône : le terrain éclairé par un
-  // projecteur reste un peu atténué (pas le plein jour complet).
-  ctx.globalCompositeOperation = "saturation";
-  ctx.fillStyle = "rgb(128,128,128)";
-  ctx.globalAlpha = 0.40 * nt;
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = "source-over";
-  // fondu radial du bord du cône vers la nuit : on garde le terrain
-  // plein près de la proue, on le dissout vers le bord du secteur.
-  ctx.globalCompositeOperation = "destination-in";
-  const fg = ctx.createRadialGradient(ox, oy, R * 0.2, ox, oy, R);
-  fg.addColorStop(0, "rgba(0,0,0,1)");
-  fg.addColorStop(0.7, "rgba(0,0,0,0.9)");
-  fg.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
-  ctx.globalCompositeOperation = "source-over";
   ctx.restore();
 }
 
@@ -1490,7 +1496,6 @@ function drawWorld(t) {
   drawBoat(t);
   drawParts();
   applyLight();
-  drawSpotlight();
   drawNavLights();
   drawBird(t);
   drawRain(t);
