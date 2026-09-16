@@ -1113,63 +1113,50 @@ function drawSpotlight() {
   if (nt < 0.12 || !B.alive) return;
   const a = nt * (1 - B.sinking);
   const coneR = 44, coneHalf = 0.40, bowD = 5.6;
-  // origine du cône = proue du bateau, en coords écran.
-  const ox = sX(B.x + Math.cos(B.h) * bowD), oy = sY(B.y + Math.sin(B.h) * bowD);
-  const dir = -B.h;                       // vers l'avant à l'écran (y inversé)
-  const fx = Math.cos(dir), fy = Math.sin(dir);
-  const nx = -fy, ny = fx;
-  const R = coneR * CFG.K;
-  const half = R * coneHalf;
-  // bout du cône arrondi : arc de cercle de rayon `half` entre les deux
-  // coins, au lieu d'un segment plat.
-  const tipX = ox + fx * R, tipY = oy + fy * R;
-  const p1x = tipX + nx * half, p1y = tipY + ny * half;
-  const p2x = tipX - nx * half, p2y = tipY - ny * half;
-  // angle des deux coins vus depuis le bout (pour l'arc) :
-  const a1 = Math.atan2(p1y - tipY, p1x - tipX);
-  const a2 = Math.atan2(p2y - tipY, p2x - tipX);
-  // chemin du cône à bout rond (en pixels) pour servir de masque.
-  const conePath = () => {
-    ctx.beginPath();
-    ctx.moveTo(ox, oy);
-    ctx.lineTo(p1x, p1y);
-    ctx.arc(tipX, tipY, half, a1, a2, false);
-    ctx.closePath();
-  };
+  // Même techno que le halo du carré : dessiné dans l'espace local du
+  // bateau (après translate/rotate/scale), composite 'lighter' qui
+  // additionne la lumière au décor déjà rendu (et déjà désaturé par
+  // applyLight) -> on réveille sa luminosité sans le re-dessiner, donc
+  // les couleurs du terrain reviennent, atténuées. Cône : segment d'angle
+  // de la proue, largeur coneHalf, portée coneR. Dégradé radial au bout,
+  // comme le halo du carré : plein au centre, fondu vers le transparent
+  // -> bout arrondi qui se dissout dans la nuit.
   ctx.save();
-  conePath(); ctx.clip();
-  ctx.fillStyle = "rgb(2,5,16)"; ctx.fillRect(0, 0, W, H);
-  blit(TER.water, 0, 0); blit(TER.shade, 4, 5); blit(TER.land, 0, 0);
-  // désaturation modérée du décor ainsi révélé : mi-chemin entre la nuit
-  // (0.82) et le plein jour (0). Reste des couleurs mais atténuées.
-  ctx.globalCompositeOperation = "saturation";
-  ctx.fillStyle = "rgb(128,128,128)";
-  ctx.globalAlpha = 0.45 * nt;
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = 1;
-  ctx.globalCompositeOperation = "source-over";
-  // léger voile gris qui atténue la luminosité du cône (rend la lumière
-  // moins crue, plus diffuse).
-  ctx.fillStyle = "rgba(60,68,80," + (0.30 * nt) + ")";
-  ctx.fillRect(0, 0, W, H);
-  // fondu vers le transparent sur les flancs et le bout : dégradé radial
-  // centré sur l'origine, transparent hors du cône, plein au centre.
-  ctx.globalCompositeOperation = "destination-in";
-  const fg = ctx.createRadialGradient(ox, oy, R * 0.15, ox, oy, R);
-  fg.addColorStop(0, "rgba(0,0,0,1)");
-  fg.addColorStop(0.7, "rgba(0,0,0,0.92)");
-  fg.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
-  ctx.globalCompositeOperation = "source-over";
-  ctx.restore();
-  // légère lueur blanche additionnelle au cône pour le faire "briller".
-  ctx.save();
-  conePath(); ctx.clip();
+  ctx.translate(sX(B.x), sY(B.y));
+  ctx.rotate(-B.h);
+  ctx.scale(CFG.K, CFG.K);
   ctx.globalCompositeOperation = "lighter";
-  const cg = ctx.createLinearGradient(ox, oy, tipX, tipY);
-  cg.addColorStop(0, "rgba(255,255,250," + (0.08 * a) + ")");
-  cg.addColorStop(1, "rgba(255,255,250,0)");
-  ctx.fillStyle = cg; ctx.fillRect(0, 0, W, H);
+  // 1. lueur du cône : dégradé linéaire le long du faisceau (plein proue,
+  //    atténué vers le bout) sur le triangle du cône.
+  const tip = bowD + coneR;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(bowD, 0);
+  ctx.lineTo(tip, -coneR * coneHalf);
+  ctx.lineTo(tip, coneR * coneHalf);
+  ctx.closePath();
+  ctx.clip();
+  const cg = ctx.createLinearGradient(bowD, 0, tip, 0);
+  cg.addColorStop(0, "rgba(255,238,206," + (0.34 * a) + ")");
+  cg.addColorStop(0.7, "rgba(255,238,206," + (0.14 * a) + ")");
+  cg.addColorStop(1, "rgba(255,238,206,0)");
+  ctx.fillStyle = cg;
+  ctx.fillRect(bowD, -coneR, coneR, coneR * 2);
+  // 2. bout arrondi + fondu : dégradé radial centré sur le bout, comme le
+  //    halo du carré. Le demi-cercle avant bombe vers l'avant ; le
+  //    dégradé radial (plein centre -> transparent bord) arrondit le bout
+  //    et le dissout dans le noir sans bord dur.
+  const bx = bowD + coneR, half = coneR * coneHalf;
+  const bg = ctx.createRadialGradient(bx, 0, 0, bx, 0, half * 1.4);
+  bg.addColorStop(0, "rgba(255,238,206," + (0.26 * a) + ")");
+  bg.addColorStop(0.6, "rgba(255,238,206," + (0.10 * a) + ")");
+  bg.addColorStop(1, "rgba(255,238,206,0)");
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(bx, 0, half * 1.4, -Math.PI / 2, Math.PI / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
   ctx.restore();
 }
 
