@@ -1053,9 +1053,9 @@ function applyLight() {
     const px = sX(B.x), py = sY(B.y);
     const r0 = lerp(95, 4, nt), r1 = lerp(260, 12, nt);
     const g = ctx.createRadialGradient(px, py, 0, px, py, r1);
-    g.addColorStop(0, "rgba(5,11,30," + (0.30 * nt) + ")");
-    g.addColorStop(0.4, "rgba(4,8,22," + (0.55 * nt) + ")");
-    g.addColorStop(1, "rgba(2,5,16," + (1.0 * nt) + ")");
+    g.addColorStop(0, "rgba(3,6,18," + (0.86 * nt) + ")");
+    g.addColorStop(0.35, "rgba(2,5,15," + (0.97 * nt) + ")");
+    g.addColorStop(1, "rgba(2,5,15," + (1.0 * nt) + ")");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   } else if (L.sun > 0.5) {
     const v = (L.sun - 0.5) / 0.3;
