@@ -1114,28 +1114,35 @@ function drawSpotlight() {
   const a = nt * (1 - B.sinking);
   const coneR = 44, coneHalf = 0.40, bowD = 5.6;
   // Même techno que le halo du carré : dessiné dans l'espace local du
-  // bateau (après translate/rotate/scale), composite 'lighter' qui
-  // additionne la lumière au décor déjà rendu (et déjà désaturé par
-  // applyLight) -> on réveille sa luminosité sans le re-dessiner, donc
-  // les couleurs du terrain reviennent, atténuées. Cône : segment d'angle
-  // de la proue, largeur coneHalf, portée coneR. Dégradé radial au bout,
-  // comme le halo du carré : plein au centre, fondu vers le transparent
-  // -> bout arrondi qui se dissout dans la nuit.
+  // bateau (translate/rotate/scale), composite 'lighter' qui additionne
+  // la lumière au décor déjà rendu (déjà désaturé par applyLight) -> on
+  // réveille sa luminosité sans le re-dessiner, donc les couleurs du
+  // terrain reviennent, atténuées.
+  // Cône : segment d'angle de la proue, largeur coneHalf, portée coneR.
+  // Le bout est un ARC DE CERCLE (segment de cercle, comme le halo du
+  // carré est un cercle) : le chemin se termine par un demi-cercle qui
+  // bombe vers l'avant, pas un segment plat.
   ctx.save();
   ctx.translate(sX(B.x), sY(B.y));
   ctx.rotate(-B.h);
   ctx.scale(CFG.K, CFG.K);
   ctx.globalCompositeOperation = "lighter";
+  const tip = bowD + coneR, half = coneR * coneHalf;
+  // chemin : proue -> coin babord -> arc vers l'avant -> coin tribord -> proue.
+  // Arc centré sur le bout (tip,0), rayon half, de -pi/2 (babord) à +pi/2
+  // (tribord) en passant par 0 (avant) = sens anti-horaire (anticlockwise).
+  const conePath = () => {
+    ctx.beginPath();
+    ctx.moveTo(bowD, 0);
+    ctx.lineTo(tip, -half);
+    ctx.arc(tip, 0, half, -Math.PI / 2, Math.PI / 2, true);
+    ctx.lineTo(bowD, 0);
+    ctx.closePath();
+  };
   // 1. lueur du cône : dégradé linéaire le long du faisceau (plein proue,
-  //    atténué vers le bout) sur le triangle du cône.
-  const tip = bowD + coneR;
+  //    atténué vers le bout) sur le cône à bout arrondi.
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(bowD, 0);
-  ctx.lineTo(tip, -coneR * coneHalf);
-  ctx.lineTo(tip, coneR * coneHalf);
-  ctx.closePath();
-  ctx.clip();
+  conePath(); ctx.clip();
   const cg = ctx.createLinearGradient(bowD, 0, tip, 0);
   cg.addColorStop(0, "rgba(255,238,206," + (0.34 * a) + ")");
   cg.addColorStop(0.7, "rgba(255,238,206," + (0.14 * a) + ")");
@@ -1143,18 +1150,15 @@ function drawSpotlight() {
   ctx.fillStyle = cg;
   ctx.fillRect(bowD, -coneR, coneR, coneR * 2);
   // 2. bout arrondi + fondu : dégradé radial centré sur le bout, comme le
-  //    halo du carré. Le demi-cercle avant bombe vers l'avant ; le
-  //    dégradé radial (plein centre -> transparent bord) arrondit le bout
-  //    et le dissout dans le noir sans bord dur.
-  const bx = bowD + coneR, half = coneR * coneHalf;
-  const bg = ctx.createRadialGradient(bx, 0, 0, bx, 0, half * 1.4);
+  //    halo du carré (plein centre -> transparent bord). Arrondit le bout
+  //    et le dissout dans la nuit sans bord dur.
+  const bg = ctx.createRadialGradient(tip, 0, 0, tip, 0, half);
   bg.addColorStop(0, "rgba(255,238,206," + (0.26 * a) + ")");
   bg.addColorStop(0.6, "rgba(255,238,206," + (0.10 * a) + ")");
   bg.addColorStop(1, "rgba(255,238,206,0)");
   ctx.fillStyle = bg;
   ctx.beginPath();
-  ctx.arc(bx, 0, half * 1.4, -Math.PI / 2, Math.PI / 2);
-  ctx.closePath();
+  ctx.arc(tip, 0, half, 0, TAU);
   ctx.fill();
   ctx.restore();
   ctx.restore();
