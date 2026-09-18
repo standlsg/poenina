@@ -8,21 +8,22 @@ const L = {};
 
 function levelSpec(n) {
   if (n >= CFG.MAXLEVEL) {
-    /* Le dernier niveau : LA TEMPÊTE. Vent fort et courant fort, mais un
-       lagon large et peu encombré — la difficulté vient des éléments, pas
-       du labyrinthe. Pas de panne moteur dans la tourmente, pas de nuit :
-       il faut déjà gérer le vent et le courant.                    */
+    /* Le dernier niveau : LA TEMPÊTE. Même lagon que le niveau 5 (mêmes
+       dimensions, mêmes patates, même lumière) — mais vent 3× plus fort
+       et courant 2× plus fort. Pas de panne moteur dans la tourmente,
+       il faut déjà gérer les éléments.                              */
+    const base = levelSpec(5);
     return {
-      n, len: 330, width: 132,
-      patates: Math.round(330 * 132 * 7.0 / 10000),
-      sandPatches: 7,
-      clearance: 17,
-      baseCur: 0.62,
-      windPow: 21,
+      n, len: base.len, width: base.width,
+      patates: base.patates,
+      sandPatches: base.sandPatches,
+      clearance: base.clearance,
+      baseCur: base.baseCur * 2,
+      windPow: base.windPow * 3,
       failRate: 0,
       night: false,
-      dayLength: 330 * 0.62,
-      spineAmp: 0.14,
+      dayLength: base.dayLength,
+      spineAmp: base.spineAmp,
       storm: true
     };
   }
