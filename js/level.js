@@ -8,10 +8,10 @@ const L = {};
 
 function levelSpec(n) {
   if (n >= CFG.MAXLEVEL) {
-    /* Le dernier niveau : LA TEMPÊTE. Même lagon que le niveau 5 (mêmes
-       dimensions, mêmes patates, même lumière) — mais vent 3× plus fort
-       et courant 2× plus fort. Pas de panne moteur dans la tourmente,
-       il faut déjà gérer les éléments.                              */
+    /* Le dernier niveau : LA TEMPÊTE, AU PRÈS TRIBORD AMURE. Même lagon
+       que le niveau 5 (mêmes dimensions, mêmes patates, même lumière) —
+       mais vent 3× plus fort, courant 2× plus fort, et le vent
+       vient de l'avant : il faut lutter contre la tourmente.       */
     const base = levelSpec(5);
     return {
       n, len: base.len, width: base.width,
@@ -306,10 +306,11 @@ function buildLevel(n, seedExtra) {
      il faut tirer des bords dans un chenal étroit.                       */
   const u = clamp((n - 1) / (CFG.MAXLEVEL - 1), 0, 1);
   if (S.storm) {
-    /* Tempête : vent portant de biais (largue 100-135°), fort mais pas
-       vent debout — on garde la maniabilité, sinon le niveau est jouable
-       au moteur seulement et la voile ne sert à rien.              */
-    L.windTwa = 100 + rng() * 35;
+    /* Tempête : AU PRÈS TRIBORD AMURE. Le vent vient de l'avant-droit,
+       à la limite du cône d'interdiction (55°) : la grand-voile ne
+       pousse presque plus, il faut lutter au moteur contre la
+       tourmente. Fini le portant qui nous poussait au mouillage. */
+    L.windTwa = 42 + rng() * 10;
   } else {
     const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
     L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
@@ -323,7 +324,10 @@ function buildLevel(n, seedExtra) {
     L.windFrom = lerp(2 * Math.PI / 3, 5 * Math.PI / 6, rng());
     L.windTwa = (L.windFrom - Math.PI / 2) * R2D;
   } else {
-    L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
+    // tempête : signe forcé, vent de TRIBORD (windFrom = π/2 - twa) ;
+    // ailleurs il reste tiré au sort (bâbord ou tribord).
+    const sgn = S.storm ? -1 : (rng() < 0.5 ? 1 : -1);
+    L.windFrom = Math.PI / 2 + sgn * L.windTwa * D2R;
   }
   L.windFrom0 = L.windFrom;          // cap de référence pour la dérive lente
   // tempête : le vent tourne beaucoup, la rose des vents est vivante
