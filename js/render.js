@@ -1028,7 +1028,7 @@ function drawParts() {
 }
 
 /* ------------------------ projecteur (helpers géométrie) ---------------- */
-const SPOT = { coneR: 44, coneDeg: 40, bowD: 5.6 };
+const SPOT = { coneR: 22, coneDeg: 40, bowD: 5.6 };
 function coneHalf() { return SPOT.coneDeg * D2R / 2; }
 function coneOrigin() {
   return [sX(B.x + Math.cos(B.h) * SPOT.bowD), sY(B.y + Math.sin(B.h) * SPOT.bowD)];
