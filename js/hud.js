@@ -572,14 +572,15 @@ function titleScreen(t) {
 }
 
 const LEVEL_NAMES = ["Le lagon d'Avatoru", "La passe de Tiputa", "Les patates de Rangiroa",
-  "Le chenal de Fakarava", "Le labyrinthe de Toau", "La longue traversée de Raroia"];
+  "Le chenal de Fakarava", "Le labyrinthe de Toau", "La longue traversée de Raroia",
+  "La tempête de Tehua"];
 
 function briefScreen(t) {
   ctx.fillStyle = "rgba(7,26,40,0.78)"; ctx.fillRect(0, 0, W, H);
   const bw = Math.min(320, W - 16), bh = 202, bx = W / 2 - bw / 2, by = H / 2 - bh / 2;
   panel(bx, by, bw, bh, 0.92);
   txt("NIVEAU " + L.n, W / 2, by + 26, 21, "#fff2cf", "center");
-  txt(LEVEL_NAMES[Math.min(5, L.n - 1)], W / 2, by + 41, 9, UI.ink, "center");
+  txt(LEVEL_NAMES[Math.min(LEVEL_NAMES.length - 1, L.n - 1)], W / 2, by + 41, 9, UI.ink, "center");
   ctx.strokeStyle = "rgba(140,208,224,0.3)"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(bx + 20, by + 49); ctx.lineTo(bx + bw - 20, by + 49); ctx.stroke();
 
@@ -598,14 +599,15 @@ function briefScreen(t) {
     ["vent", "de " + dirs[di] + ", " + Math.round(L.windKn) + " kt"],
     ["allure dans l'axe", Math.round(a) + "°"],
     ["lumière", L.night ? "AUCUNE — de nuit" : "jour : " + Math.round(L.dayLength) + " s"],
-    ["fiabilité moteur", L.failRate < 0.0015 ? "correcte" : L.failRate < 0.0025 ? "douteuse" : "inquiétante"]
+    ["fiabilité moteur", L.storm ? "bonne — croisons les doigts" : L.failRate < 0.0015 ? "correcte" : L.failRate < 0.0025 ? "douteuse" : "inquiétante"]
   ];
   rows.forEach((r, i) => {
     txt(r[0], bx + 24, by + 62 + i * 12, 8, UI.dim);
     txt(String(r[1]), bx + bw - 24, by + 62 + i * 12, 8, "#ffe9b5", "right");
   });
-  txt(L.night ? "TRAVERSÉE DE NUIT — " + allure : allure,
-    W / 2, by + bh - 28, 8, (L.night || a < 75) ? UI.warn : UI.mint, "center");
+  txt(L.storm ? "TEMPÊTE — vent fort, courant fort : cap au mouillage !"
+    : L.night ? "TRAVERSÉE DE NUIT — " + allure : allure,
+    W / 2, by + bh - 28, 8, (L.storm || L.night || a < 75) ? UI.warn : UI.mint, "center");
   const bl = 0.55 + 0.45 * Math.sin(t * 3.6);
   txt("ESPACE POUR LARGUER LES AMARRES", W / 2, by + bh - 9, 9, "rgba(255,250,220," + bl + ")", "center");
 }

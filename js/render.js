@@ -1070,6 +1070,12 @@ function applyLight() {
     ctx.globalCompositeOperation = "source-over";
   }
   if (s.va > 0.003) { ctx.fillStyle = rgba(s.veil, s.va); ctx.fillRect(0, 0, W, H); }
+  // tempête : ciel de plomb — voile gris-vert sur tout le lagon, les
+  // bandes de profondeur restent lisibles dessous.
+  if (L.storm) {
+    ctx.fillStyle = "rgba(52,64,72,0.20)";
+    ctx.fillRect(0, 0, W, H);
+  }
 
   /* la nuit : on perd les couleurs… et la vue ne porte plus qu'autour du
      bateau. Le projecteur avant EXCLUT son cône du voile : le terrain
@@ -1450,6 +1456,12 @@ function updateRain(dt) {
   // la bande se deplace lateralement (selon l'axe X, largeur du lagon) dans
   // le sens du vent : voile vertical circulant gauche->droite ou inverse.
   const vx = -Math.cos(L.windFrom) * (8 + L.windPow * 0.6);
+  // tempête : il pleut sur tout le lagon, en continu
+  if (L.storm) {
+    rain.active = true;
+    rain.alpha = Math.min(1, rain.alpha + dt * 1.5);
+    return;
+  }
   if (!rain.active) {
     rain.next -= dt;
     if (rain.next <= 0) {
@@ -1472,8 +1484,23 @@ function updateRain(dt) {
 }
 function drawRain(t) {
   if (!rain.active || rain.alpha <= 0.01) return;
-  const px = sX(rain.x), bw = W * 0.30, left = px - bw / 2;
   const a = rain.alpha;
+  if (L.storm) {
+    // tempête : rideau de pluie sur tout l'écran, oblique selon le vent,
+    // plus dense et plus rapide qu'une averse tropicale.
+    ctx.fillStyle = "rgba(34,44,58," + (0.22 * a) + ")";
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(200,218,232," + (0.34 * a) + ")";
+    ctx.lineWidth = 1; ctx.beginPath();
+    const drift = -Math.cos(L.windFrom) * 4.5;
+    for (let i = 0; i < 170; i++) {
+      const x = (i * 71 + t * 60) % W, y = (i * 37 + t * 340) % H;
+      ctx.moveTo(x, y); ctx.lineTo(x + drift, y + 11);
+    }
+    ctx.stroke();
+    return;
+  }
+  const px = sX(rain.x), bw = W * 0.30, left = px - bw / 2;
   // voile gris vertical qui assombrit l'eau sous l'averse
   const g = ctx.createLinearGradient(left, 0, left + bw, 0);
   g.addColorStop(0, "rgba(40,52,66,0)");

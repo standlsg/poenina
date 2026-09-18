@@ -7,6 +7,25 @@ const K_WATER = 0, K_CORAL = 1, K_REEF = 2, K_SAND = 3, K_DRY = 4, K_VEG = 5, K_
 const L = {};
 
 function levelSpec(n) {
+  if (n >= CFG.MAXLEVEL) {
+    /* Le dernier niveau : LA TEMPÊTE. Vent fort et courant fort, mais un
+       lagon large et peu encombré — la difficulté vient des éléments, pas
+       du labyrinthe. Pas de panne moteur dans la tourmente, pas de nuit :
+       il faut déjà gérer le vent et le courant.                    */
+    return {
+      n, len: 330, width: 132,
+      patates: Math.round(330 * 132 * 7.0 / 10000),
+      sandPatches: 7,
+      clearance: 17,
+      baseCur: 0.62,
+      windPow: 21,
+      failRate: 0,
+      night: false,
+      dayLength: 330 * 0.62,
+      spineAmp: 0.14,
+      storm: true
+    };
+  }
   const len = 238 + 37 * (n - 1);          // +~15 % par palier (moitié moins raide)
   const width = 138 - 11 * (n - 1);
   return {
@@ -26,11 +45,9 @@ function levelSpec(n) {
     failRate: n < 2 ? 0.0016 : (0.0022 + 0.0014 * (n - 2)) * 1.15,
     /* Le jour est calibré sur le temps qu'il faut vraiment pour traverser :
        une course propre arrive avec encore de la lumière, une course
-       hésitante finit dans le noir. Le dernier niveau est nocturne.
-       Le coefficient MONTE avec le niveau parce que la vitesse effective
-       baisse (chenal étroit, plus de patates, vent dur, dérive) : mesuré
-       3,7 m/s au niveau 1 contre 3,2 m/s au niveau 6.                  */
-    night: n >= CFG.MAXLEVEL,
+       hésitante finit dans le noir. L'avant-dernier niveau est nocturne
+       (le dernier est la tempête, de jour).                      */
+    night: n === 6,
     dayLength: len * (0.40 + 0.021 * (n - 1)) * 1.2,
     spineAmp: 0.16 + 0.055 * n
   };
@@ -286,8 +303,15 @@ function buildLevel(n, seedExtra) {
      arrière, on se laisse pousser. Niveau 6 : du travers au vent debout,
      il faut tirer des bords dans un chenal étroit.                       */
   const u = clamp((n - 1) / (CFG.MAXLEVEL - 1), 0, 1);
-  const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
-  L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
+  if (S.storm) {
+    /* Tempête : vent portant de biais (largue 100-135°), fort mais pas
+       vent debout — on garde la maniabilité, sinon le niveau est jouable
+       au moteur seulement et la voile ne sert à rien.              */
+    L.windTwa = 100 + rng() * 35;
+  } else {
+    const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
+    L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe
+  }
   if (L.night) {
     // Niveau nocturne : brise de terre de biais. Vent venant du 315° (cap
     // boussole écran), entre 300° et 330°. En convention monde (cap boussole
@@ -300,7 +324,8 @@ function buildLevel(n, seedExtra) {
     L.windFrom = Math.PI / 2 + (rng() < 0.5 ? 1 : -1) * L.windTwa * D2R;
   }
   L.windFrom0 = L.windFrom;          // cap de référence pour la dérive lente
-  L.windDrift = (rng() < 0.5 ? 1 : -1) * (0.014 + 0.012 * n / CFG.MAXLEVEL); // rad/s
+  // tempête : le vent tourne beaucoup, la rose des vents est vivante
+  L.windDrift = (rng() < 0.5 ? 1 : -1) * (S.storm ? 0.05 : 0.014 + 0.012 * n / CFG.MAXLEVEL); // rad/s
   L.windPow0 = S.windPow;              // vent nominal (brise de mer établie)
   L.windPow = S.windPow;               // vent effectif (recalculé chaque frame)
   L.windKn = S.windPow / 2;            // anémomètre (suit le vent effectif)

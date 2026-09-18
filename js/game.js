@@ -228,12 +228,16 @@ function frame(now) {
     const s80 = clamp((L.sun - 0.80) / 0.10, 0, 1);   // 0->1 sur le crépuscule
     const s90 = clamp((L.sun - 0.90) / 0.10, 0, 1);   // 0->1 sur la nuit
     let therm;
-    if (L.sun < 0.80) therm = 1.0;
+    if (L.storm) therm = 1.0;                       // la tempête ne faiblit pas
+    else if (L.sun < 0.80) therm = 1.0;
     else if (L.sun < 0.90) therm = lerp(1.0, 0.70, s80);
     else therm = lerp(0.70, 0.78, s90);
     // rafales de transition thermique (±20 %, ~12 s) sur la fenêtre de bascule
     const trans = (L.sun >= 0.80 && L.sun <= 0.97);
-    const gust = trans ? 1 + 0.20 * Math.sin(L.time * 0.5 + L.gustPhase) : 1;
+    // tempête : grosses rafales permanentes (±35 %, ~9 s) — le vent respire
+    // fort autour du nominal, c'est lui qui donne le rythme du niveau.
+    const gust = L.storm ? 1 + 0.35 * Math.sin(L.time * 0.7 + L.gustPhase)
+      : trans ? 1 + 0.20 * Math.sin(L.time * 0.5 + L.gustPhase) : 1;
     L.windPow = L.windPow0 * therm * gust;
     L.windKn = L.windPow / 2;
     // le vent dérive lentement : la rose des vents est vivante. Borne élargie

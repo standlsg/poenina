@@ -57,7 +57,7 @@ const CFG = {
                     // (la coque y accroche de loin, pas seulement au contact du fond)
   SCRAPE: 0.65,     // marge sous quille qui déclenche le frottement
   LOA: 11.3, BEAM: 6.6,
-  MAXLEVEL: 6,
+  MAXLEVEL: 7,
   /* Dilatation du temps « physique » : tout ce qui bouge avance 20 % plus
      vite à l'écran, mais les vitesses restent stockées en m/s réels, donc
      les nœuds affichés au HUD ne changent pas.                            */
