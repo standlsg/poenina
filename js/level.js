@@ -8,10 +8,10 @@ const L = {};
 
 function levelSpec(n) {
   if (n >= CFG.MAXLEVEL) {
-    /* Le dernier niveau : LA TEMPÊTE, AU PRÈS TRIBORD AMURE. Même lagon
+    /* Le dernier niveau : LA TEMPÊTE, TRAVERS AVANT TRIBORD AMURE. Même lagon
        que le niveau 5 (mêmes dimensions, mêmes patates, même lumière) —
-       mais vent 3× plus fort, courant 2× plus fort, et le vent
-       vient de l'avant : il faut lutter contre la tourmente.       */
+       mais vent 3× plus fort, courant 2× plus fort, et le vent vient
+       de l'avant : il faut lutter contre la tourmente.       */
     const base = levelSpec(5);
     return {
       n, len: base.len, width: base.width,
@@ -306,11 +306,11 @@ function buildLevel(n, seedExtra) {
      il faut tirer des bords dans un chenal étroit.                       */
   const u = clamp((n - 1) / (CFG.MAXLEVEL - 1), 0, 1);
   if (S.storm) {
-    /* Tempête : AU PRÈS TRIBORD AMURE. Le vent vient de l'avant-droit,
-       à la limite du cône d'interdiction (55°) : la grand-voile ne
-       pousse presque plus, il faut lutter au moteur contre la
-       tourmente. Fini le portant qui nous poussait au mouillage. */
-    L.windTwa = 42 + rng() * 10;
+    /* Tempête : TRAVERS AVANT TRIBORD AMURE. Le vent vient de l'avant-droit
+       mais pas vent debout : entre le près et le travers, la grand-voile
+       pousse encore — mais le vent 3× plus fort et les rafales à contre
+       en font une lutte. On garde l'amure tribord forcée.            */
+    L.windTwa = 62 + rng() * 16;
   } else {
     const twaMin = lerp(82, 14, u), twaMax = lerp(178, 94, u);
     L.windTwa = twaMin + rng() * (twaMax - twaMin);        // allure dans l'axe

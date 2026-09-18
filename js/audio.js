@@ -159,6 +159,45 @@ const Snd = {
     s.connect(lp); lp.connect(g); g.connect(this.sfx); s.start(); lfo.start();
   },
   setSurf(v) { if (this.ready) this.surfGain.gain.setTargetAtTime(v * 0.07, this.ctx.currentTime, 0.4); },
+  /* ===== vent de tempête : houle hurlante en fond, oppressante =======
+     Deux couches de bruit filtré : un hurlement grave (400 Hz, large)
+     qui respire lentement (LFO 0.06 Hz — la montée/descente de la
+     tempête, ~17 s le cycle complet) et un sifflement aigu (1.9 kHz,
+     étroit) qui hurle par-dessus. Gain total modulé par le vent.  */
+  buildStorm() {
+    const c = this.ctx;
+    const g = this.stormGain = c.createGain(); g.gain.value = 0;
+    // couche 1 : le hurlement grave
+    const s1 = c.createBufferSource(); s1.buffer = this.noise; s1.loop = true;
+    const bp1 = c.createBiquadFilter(); bp1.type = "bandpass"; bp1.frequency.value = 430; bp1.Q.value = 0.5;
+    const g1 = c.createGain(); g1.gain.value = 0.9;
+    // couche 2 : le sifflement aigu
+    const s2 = c.createBufferSource(); s2.buffer = this.noise; s2.loop = true;
+    const bp2 = c.createBiquadFilter(); bp2.type = "bandpass"; bp2.frequency.value = 1900; bp2.Q.value = 3.5;
+    const g2 = c.createGain(); g2.gain.value = 0.28;
+    // respiration : LFO lent sur le gain du hurlement
+    const lfo = c.createOscillator(), lg = c.createGain();
+    lfo.frequency.value = 0.055; lg.gain.value = 0.30;
+    // deuxième LFO plus rapide et irrégulier pour le sifflement
+    const lfo2 = c.createOscillator(), lg2 = c.createGain();
+    lfo2.frequency.value = 0.21; lg2.gain.value = 0.12;
+    s1.connect(bp1); bp1.connect(g1); g1.connect(g);
+    s2.connect(bp2); bp2.connect(g2); g2.connect(g);
+    lfo.connect(lg); lg.connect(g1.gain);
+    lfo2.connect(lg2); lg2.connect(g2.gain);
+    g.connect(this.sfx);
+    s1.start(); s2.start(); lfo.start(); lfo2.start();
+  },
+  setStorm(v) {
+    if (!this.ready) return;
+    if (!this.stormGain) this.buildStorm();
+    this.stormGain.gain.setTargetAtTime(0.30 * v, this.ctx.currentTime, 1.2);
+  },
+  /* rafale à contre : whoosh montant puis retombée — on l'entend venir. */
+  sGust() {
+    this.burst(300, 2.6, "bandpass", 0.40, 0.7, 1100);
+    this.burst(1400, 1.9, "bandpass", 0.22, 2.2, 350);
+  },
 
   burst(freq, dur, type, gain, q, sweepTo) {
     if (!this.ready) return; const c = this.ctx, t = c.currentTime;

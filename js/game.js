@@ -54,6 +54,7 @@ const Game = {
     Snd.intensity = L.n >= 3 ? 2 : 1;
     Snd.transpose = ((L.n - 1) % 3) * 2;
     Snd.startMusic(); Snd.setSurf(1);
+    Snd.setStorm(L.storm ? 1 : 0);        // hurlement de tempête : niveau 7 seulement
   },
   /* choc encaissé : on perd une chance mais on flotte encore */
   impact(cause, left) {
@@ -70,7 +71,7 @@ const Game = {
   die(reason) {
     if (!B.alive) return;
     B.alive = false; B.dead = reason; this.deadT = 0;
-    Snd.setEngine(0, 0); Snd.setSurf(0.4);
+    Snd.setEngine(0, 0); Snd.setSurf(0.4); Snd.setStorm(0);
     if (reason === "sable") {
       Snd.sGround(); this.shake(5);
       for (let i = 0; i < 10; i++) spawnSpray(B.x, B.y, 2);
@@ -88,7 +89,7 @@ const Game = {
   win() {
     if (this.state === "win") return;
     this.state = "win"; this.winT = 0;
-    Snd.setEngine(0, 0);
+    Snd.setEngine(0, 0); Snd.setStorm(0);
     Snd.sAnchorSet(); Snd.sStingWin(1.35);
     for (let i = 0; i < 5; i++) spawnRipple(B.x, B.y, 1 + i * 2);
     if (L.n >= this.best) {
@@ -122,7 +123,7 @@ const Game = {
     if (this.state !== "play" && this.state !== "pause") return;
     this.state = this.state === "play" ? "pause" : "play";
     CHEAT.buf = "";                       // on repart d'une séquence vierge
-    if (this.state === "pause") { Snd.stopMusic(); Snd.setEngine(0, 0); }
+    if (this.state === "pause") { Snd.stopMusic(); Snd.setEngine(0, 0); Snd.setStorm(0); }
     else { Snd.startMusic(); for (const k in Input) Input[k] = 0; }
   },
   newGame() {
@@ -246,6 +247,29 @@ function frame(now) {
     const wd = angDiff(L.windFrom, L.windFrom0);
     const driftMul = trans ? 1.8 : 1.0;
     if (Math.abs(wd) < 0.52) L.windFrom += L.windDrift * dt * driftMul;
+    /* tempête : RAFALES À CONTRE. Toutes les 20-40 s, le vent saute de
+       40-60° pendant 3-6 s (souvent dans le sens qui nous contrarie :
+       une vraie dévente forcée, le bateau perd sa route) puis revient.
+       C'est elles qui font rater un virement ou embarder un barré.  */
+    if (L.storm) {
+      if (L.gustNext === undefined || L.gustNext === null) { L.gustNext = 20 + Math.random() * 20; L.gustT = 0; L.gustA = 0; }
+      if (L.gustT > 0) {
+        L.gustT -= dt;
+        L.windPow *= 1 + 0.18 * Math.sin(L.gustT * 6);   // la bourrasque tremble
+        if (L.gustT <= 0) { L.gustNext = 20 + Math.random() * 20; L.gustA = 0; }
+      } else {
+        L.gustNext -= dt;
+        if (L.gustNext <= 0) {
+          L.gustA = (Math.random() < 0.5 ? 1 : -1) * (40 + Math.random() * 20) * D2R;
+          L.gustT = 3 + Math.random() * 3;
+          Snd.sGust();
+          Game.flash("RAFALE À CONTRE !", 1.5);
+        }
+      }
+      // relaxation continue vers windFrom0 + rafale : la dérive lente ne
+      // peut pas laisser le vent figé hors de sa rose après une bourrasque
+      L.windFrom += (L.gustA - angDiff(L.windFrom, L.windFrom0)) * Math.min(1, dt * 1.8);
+    }
     // repérés visuels de la transition
     if (!L.duskFlash && L.sun > 0.80) { L.duskFlash = true; Game.flash("LE VENT TOMBE — FIN DE JOURNÉE", 3); }
     if (!L.landFlash && L.sun > 0.90) { L.landFlash = true; Game.flash("BRISE DE TERRE — RAFRALES", 3); }
