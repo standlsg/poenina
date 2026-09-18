@@ -140,17 +140,20 @@ function drawEddies(t) {
 }
 function drawWindRipples(t) {
   const wdx = -Math.cos(L.windFrom), wdy = -Math.sin(L.windFrom);
-  ctx.strokeStyle = rgba(P.foam, 0.13); ctx.lineWidth = 1;
+  // tempête : le lagon entier est ridé — crêtes serrées, longues, plus blanches
+  const stormy = !!L.storm;
+  ctx.strokeStyle = rgba(P.foam, stormy ? 0.26 : 0.13); ctx.lineWidth = 1;
   ctx.beginPath();
-  const step = 13, n = 0.5;
+  const step = stormy ? 7 : 13, n = stormy ? 0.05 : 0.5;
   const i0 = Math.floor((cam.x - W / CFG.K / 2) / step) - 1, i1 = Math.ceil((cam.x + W / CFG.K / 2) / step) + 1;
   const j0 = Math.floor((cam.y - H / CFG.K / 2) / step) - 1, j1 = Math.ceil((cam.y + H / CFG.K / 2) / step) + 1;
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
     const bx = i * step + ((j & 1) ? step * 0.5 : 0) + Math.sin(j * 1.7) * 2;
     const by = j * step + Math.sin(i * 2.1) * 2;
     if (Math.sin(bx * 0.27 + by * 0.19 + t * 1.3) < n) continue;
+    const rl = stormy ? 5.4 : 3.6;
     ctx.moveTo(sX(bx), sY(by));
-    ctx.lineTo(sX(bx + wdx * 3.6), sY(by + wdy * 3.6));
+    ctx.lineTo(sX(bx + wdx * rl), sY(by + wdy * rl));
   }
   ctx.stroke();
 }
@@ -187,6 +190,33 @@ function drawShoreFoam(t) {
   foamLine(y => L.shoreX(y) + 3.2, t, 1.8, 0.11, 1.1, 1.2, 0.3);
 }
 function drawReefFoam(t) {
+  // tempête : la barrière encaisse la houle — bourrelet épais, paquets de
+  // mer plus gros et plus fréquents, embruns qui volent vers le lagon.
+  if (L.storm) {
+    foamLine(y => L.reefX(y) - 5.0, t, 3.2, 0.15, 3.0, 8.5, 0.62);
+    foamLine(y => L.reefX(y) - 2.0, t, 2.6, 0.24, 3.8, 3.6, 0.95);
+    const y0 = cam.y - H / CFG.K * 0.6, y1 = cam.y + H / CFG.K * 0.6;
+    for (let y = Math.floor(y0 / 6) * 6; y <= y1; y += 6) {
+      const ph = Math.sin(y * 0.31 + t * 2.6) * Math.sin(y * 0.11 - t * 1.3);
+      if (ph < 0.15) continue;
+      // paquets de mer : écume blanche projetée au-dessus du bourrelet
+      const x = L.reefX(y) - 2 - ph * 4;
+      ctx.fillStyle = rgba(P.foam, ph * 0.9);
+      ctx.beginPath(); ctx.ellipse(sX(x), sY(y), 11 * ph, 4.2 * ph, 0, 0, TAU); ctx.fill();
+      // embruns : traînées d'écume arrachées par le vent, vers l'intérieur
+      if (ph > 0.62) {
+        const wx = -Math.cos(L.windFrom), wy = -Math.sin(L.windFrom);
+        const len = 10 + ph * 16;
+        ctx.strokeStyle = rgba(P.foam, (ph - 0.62) * 1.2);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sX(x), sY(y));
+        ctx.lineTo(sX(x + wx * len), sY(y + wy * len));
+        ctx.stroke();
+      }
+    }
+    return;
+  }
   // le récif brise : bourrelet épais + paquets de mer
   foamLine(y => L.reefX(y) - 3.5, t, 1.6, 0.13, 2.1, 5.5, 0.45);
   foamLine(y => L.reefX(y) - 2.0, t, 2.1, 0.21, 2.6, 2.4, 0.9);
@@ -1070,10 +1100,18 @@ function applyLight() {
     ctx.globalCompositeOperation = "source-over";
   }
   if (s.va > 0.003) { ctx.fillStyle = rgba(s.veil, s.va); ctx.fillRect(0, 0, W, H); }
-  // tempête : ciel de plomb — voile gris-vert sur tout le lagon, les
-  // bandes de profondeur restent lisibles dessous.
+  // tempête : ciel de plomb — on désature franchement le lagon (le
+  // composite 'saturation' écrase la chrominance), puis voile gris froid.
   if (L.storm) {
-    ctx.fillStyle = "rgba(52,64,72,0.20)";
+    ctx.save();
+    ctx.globalCompositeOperation = "saturation";
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = "rgb(128,128,128)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
+    ctx.fillStyle = "rgba(58,66,74,0.30)";
     ctx.fillRect(0, 0, W, H);
   }
 
@@ -1193,6 +1231,8 @@ function drawNavLights() {
    interaction. Elle vole au-dessus de tout, donc dessinée en dernier.  */
 let bird = { active: false, x: 0, y: 0, vx: 0, sc: 1, ph: 0, next: 8 };
 function updateBird(dt) {
+  // pas d'oiseau dans la tempête : ils se sont abrités
+  if (L.storm) { bird.active = false; return; }
   if (!bird.active) {
     bird.next -= dt;
     if (bird.next <= 0) {
@@ -1452,6 +1492,12 @@ function drawCrabs(t) {
    Une bande de pluie traverse le lagon dans l'axe du vent : voile gris,
    rides accrues, visibilité réduite. Purement cosmétique, pas de danger. */
 let rain = { active: false, x: 0, next: 40, alpha: 0 };
+function resetRain() {
+  // un niveau non-tempête repart en averse passagère (jamais le rideau du 7)
+  rain.active = false;
+  rain.alpha = 0;
+  rain.next = 40;
+}
 function updateRain(dt) {
   // la bande se deplace lateralement (selon l'axe X, largeur du lagon) dans
   // le sens du vent : voile vertical circulant gauche->droite ou inverse.

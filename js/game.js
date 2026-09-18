@@ -42,6 +42,7 @@ const Game = {
     bakeTerrain();
     resetBoat();
     parts.length = 0;
+    resetRain();
     cam.x = B.x; cam.y = B.y; cam.shake = 0;
     initCurrentParticles();
     this.msg = null; this.msgT = 0;

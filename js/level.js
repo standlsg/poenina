@@ -214,6 +214,7 @@ function pathExists() {
 function buildLevel(n, seedExtra) {
   const S = levelSpec(n);
   const rng = mulberry32(1337 + n * 7919 + (seedExtra | 0) * 104729);
+  L.storm = false;                 // la tempête n'existe qu'au dernier niveau
   for (const k in S) L[k] = S[k];
   L.rng = rng;
 
@@ -367,12 +368,14 @@ function buildLevel(n, seedExtra) {
     L.huts.push({ x: sx - 13 - rng() * 12, y, a: (rng() - 0.5) * 0.6 });
   }
 
-  /* ---- faune ---- */
+  /* ---- faune ---- (absente dans la tempête : les animaux ont fui) */
   L.fauna = [];
-  const kinds = ["raie", "tortue", "banc", "requin", "dauphin", "banc", "raie", "banc", "tortue"];
-  for (let i = 0; i < 18 + n * 3; i++) {
-    const y = rng() * S.len, sx = L.shoreX(y), rx = L.reefX(y);
-    L.fauna.push(makeFauna(kinds[(rng() * kinds.length) | 0], sx + 14 + rng() * (rx - sx - 28), y, rng));
+  if (!S.storm) {
+    const kinds = ["raie", "tortue", "banc", "requin", "dauphin", "banc", "raie", "banc", "tortue"];
+    for (let i = 0; i < 18 + n * 3; i++) {
+      const y = rng() * S.len, sx = L.shoreX(y), rx = L.reefX(y);
+      L.fauna.push(makeFauna(kinds[(rng() * kinds.length) | 0], sx + 14 + rng() * (rx - sx - 28), y, rng));
+    }
   }
 
   /* ---- pêcheurs : barques locales qui errent dans le lagon ----
